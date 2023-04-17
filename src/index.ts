@@ -18,15 +18,18 @@ function str(json: Object) {
 
 
 class Authenticator {
+  private debug?: boolean
+
   private bot?: string
   private token?: string
   private channelTs = new Map<string, string>()
   private client?: WebClient
 
-  constructor(token: string, bot: string) {
+  constructor(token: string, bot: string, debug: boolean = false) {
     this.bot = bot
     this.token = token
     this.client = new WebClient( this.token )
+    this.debug = debug
   }
 
 
@@ -92,27 +95,41 @@ class Authenticator {
     } = opt
 
     let ts = this.channelTs.get(conversationId)
+    if (this.debug) {
+      console.log('current thread_ts: ', ts)
+    }
+
     const result = await this.client?.chat.postMessage({
       text: `<@${this.bot}> ${text}`,
       thread_ts: ts,
       channel
     })
 
-    let resultMessage = ''
+    let 
+      resultMessage = '',
+      limit = 1
+
     if (!this.channelTs.has(conversationId)) {
       this.channelTs.set(conversationId, result.ts)
       ts = result.ts
     }
-
     while(true) {
-      const partialResponse = await this.client?.conversations.replies({ channel, ts, limit: 1 })
+      const partialResponse = await this.client?.conversations.replies({ channel, ts, limit })
       if (!partialResponse.ok) {
         await delay(500)
         continue
       }
+      // console.log('partialResponse', partialResponse.messages)
       const messages = partialResponse.messages.filter(it => result.message.bot_id !== it.bot_id)
-      const message = messages[messages.length - 1]
+
+      const message = messages[messages.length - limit]
       if (message) {
+        if (message.metadata?.event_type) {
+          limit = 2
+          await delay(500)
+          continue
+        }
+
         if (message.text) resultMessage = message.text
         if (onMessage && message.text !== TYPING) {
           onMessage({

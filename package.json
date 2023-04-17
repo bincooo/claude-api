@@ -1,8 +1,8 @@
 {
   "name": "claude-api",
-  "version": "1.0.0",
+  "version": "1.0.0-test-1",
   "description": "slack Authentication Library for ClaudeAI.",
-  "main": "src/index.ts",
+  "main": "index.js",
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",

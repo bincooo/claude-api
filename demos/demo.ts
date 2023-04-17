@@ -2,11 +2,13 @@ import Authenticator from '../src'
 async function main() {
 
   let
-    token = 'xoxp-5xxxxx',
-    bot = 'U0xxxx',
+    token = 'xoxp-51xxxx',
+    bot = 'U05xxx',
+    debug = true,
+
     text = '讲个故事'
 
-  const authenticator = new Authenticator(token, bot)
+  const authenticator = new Authenticator(token, bot, debug)
   const channel = await authenticator.newChannel('chat-7890')
   let result = await authenticator.sendMessage({
     text, channel, onMessage: (originalMessage) => {

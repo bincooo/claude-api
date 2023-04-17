@@ -10,7 +10,7 @@ import Authenticator, { type ChatResponse } from 'claude-api'
 let
 		// user-token
     token = 'xoxp-xxxxx',
-    // claude channel
+    // claude appid
     bot = 'U0xxxx',
     text = '讲个故事'
 
