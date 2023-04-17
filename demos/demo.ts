@@ -2,10 +2,9 @@ import Authenticator from '../src'
 async function main() {
 
   let
-    token = 'xoxp-51xxxx',
-    bot = 'U05xxx',
+    token = 'xoxp-xxx',
+    bot = 'U054xxxx',
     debug = true,
-
     text = '讲个故事'
 
   const authenticator = new Authenticator(token, bot, debug)

@@ -1,4 +1,4 @@
-# OpenAIAuth for Node.js
+# ClaudeAI for Node.js
 
 slack Authentication Library for ClaudeAI.
 

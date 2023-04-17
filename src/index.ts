@@ -32,6 +32,14 @@ class Authenticator {
     this.debug = debug
   }
 
+   async oauth2(): Promise<string> {
+    const result = await this.client.oauth.v2.exchange({
+      /// TODO
+    })
+    console.log(result)
+    return 'ok'
+  }
+
 
   async newChannel(name: string): Promise<string> {
     const conversations = await this.client?.conversations.list({ limit: 2000 })
