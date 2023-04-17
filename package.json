@@ -11,7 +11,7 @@
     "predev": "npm run clean"
   },
   "author": "bincooo",
-  "license": "ISC",
+  "license": "MIT",
   "exports": {
     ".": {
       "import": "./build/index.js",
@@ -19,6 +19,9 @@
       "default": "./build/index.js"
     }
   },
+  "type": "module",
+  "source": "./src/index.ts",
+  "types": "./build/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bincooo/claude-api.git"
@@ -27,7 +30,9 @@
     "@types/node": "14.18.36",
     "del-cli": "^5.0.0",
     "tsup": "^6.6.3",
-    "typescript": "^4.9.5"
+    "tsx": "^3.12.1",
+    "typescript": "^4.9.5",
+    "@types/uuid": "^9.0.0"
   },
   "dependencies": {
     "@slack/web-api": "^6.8.1",

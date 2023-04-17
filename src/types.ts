@@ -6,5 +6,6 @@ export class ClaudeError extends Error {
 
 export type ChatResponse = {
   text: string
+  channel: string
   conversationId?: string
 }

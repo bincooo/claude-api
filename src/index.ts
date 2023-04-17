@@ -20,7 +20,7 @@ function str(json: Object) {
 class Authenticator {
   private bot?: string
   private token?: string
-  private channelTs = new Map<string, number>()
+  private channelTs = new Map<string, string>()
   private client?: WebClient
 
   constructor(token: string, bot: string) {
@@ -30,24 +30,24 @@ class Authenticator {
   }
 
 
-  async newChannel(name: string): string {
-    const conversations = await this.client.conversations.list({ limit: 2000 })
-    if (!conversations.ok) {
-      const error = new types.ClaudeError(conversations.error)
+  async newChannel(name: string): Promise<string> {
+    const conversations = await this.client?.conversations.list({ limit: 2000 })
+    if (!conversations?.ok) {
+      const error = new types.ClaudeError(conversations?.error)
       error.statusCode = 5001
       error.statusText = 'method `conversations.list` error.'
       throw error
     }
 
-    const conversation = conversations.channels.find(it => it.name === name)
+    const conversation = conversations?.channels?.find(it => it.name === name)
     if (conversation) {
       return conversation.id
     }
 
-    const result = await this.client.conversations.create({ name })
+    const result = await this.client?.conversations.create({ name })
 
     if (result.ok) {
-      this._joinChannel(result.channel.id, this.bot)
+      this._joinChannel(result.channel.id, this.bot, name)
       return result.channel.id
     }
 
@@ -57,10 +57,10 @@ class Authenticator {
     throw error
   }
 
-  private async _joinChannel(channel: string, users: string) {
-    const result = await this.client.conversations.invite({ channel, users })
+  private async _joinChannel(channel: string, users: string, name: string) {
+    const result = await this.client?.conversations.invite({ channel, users })
     if (!result.ok) {
-      await this._deleteChannel(channel)
+      await this._deleteChannel(channel, name)
       const error = new types.ClaudeError(result.error)
       error.statusCode = 5003
       error.statusText = 'method `conversations.invite` error.'
@@ -68,15 +68,12 @@ class Authenticator {
     }
   }
 
-  private async _deleteChannel(channel: string) {
-    const result = await this.client.conversations.rename({
-      channel: result.channel_id,
-      name: name + dat()
+  private async _deleteChannel(channel: string, name: string) {
+    const result = await this.client?.conversations.rename({
+      channel, name: name + dat()
     })
     if (result.ok) {
-      await this.client.conversations.leave({
-        channel: result.channel_id
-      })
+      await this.client?.conversations.leave({ channel })
     }
   }
 
@@ -86,7 +83,7 @@ class Authenticator {
     channel: string
     conversationId?: string
     onMessage?: (partialResponse: types.ChatResponse) => void
-  }): types.ChatResponse {
+  }): Promise<types.ChatResponse> {
     const {
       text,
       channel,
@@ -95,7 +92,7 @@ class Authenticator {
     } = opt
 
     let ts = this.channelTs.get(conversationId)
-    const result = await this.client.chat.postMessage({
+    const result = await this.client?.chat.postMessage({
       text: `<@${this.bot}> ${text}`,
       thread_ts: ts,
       channel
@@ -108,7 +105,7 @@ class Authenticator {
     }
 
     while(true) {
-      const partialResponse = await this.client.conversations.replies({ channel, ts, limit: 1 })
+      const partialResponse = await this.client?.conversations.replies({ channel, ts, limit: 1 })
       if (!partialResponse.ok) {
         await delay(500)
         continue
