@@ -1,0 +1,37 @@
+{
+  "name": "claude-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "clean": "del build",
+    "prebuild": "npm run clean",
+    "predev": "npm run clean"
+  },
+  "author": "bincooo",
+  "license": "ISC",
+  "exports": {
+    ".": {
+      "import": "./build/index.js",
+      "types": "./build/index.d.ts",
+      "default": "./build/index.js"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bincooo/claude-api.git"
+  },
+  "devDependencies": {
+    "@types/node": "14.18.36",
+    "del-cli": "^5.0.0",
+    "tsup": "^6.6.3",
+    "typescript": "^4.9.5"
+  },
+  "dependencies": {
+    "@slack/web-api": "^6.8.1",
+    "delay": "^5.0.0",
+    "uuid": "^9.0.0"
+  }
+}

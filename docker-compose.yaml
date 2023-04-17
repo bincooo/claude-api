@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  test:
+    build: .
+    image: slackjs:latest
+    restart: always
+    ports:
+      - 5900:5900
+      - 3000:3000
+    volumes:
+      - ./src:/app/src
+      - ./demos:/app/demos
+    extra_hosts:
+      - "master.io:192.168.0.165"
