@@ -1,6 +1,6 @@
 {
   "name": "claude-api",
-  "version": "1.0.0-test-2",
+  "version": "1.0.1",
   "description": "slack Authentication Library for ClaudeAI.",
   "main": "index.js",
   "scripts": {

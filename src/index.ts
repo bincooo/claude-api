@@ -32,10 +32,12 @@ class Authenticator {
     this.debug = debug
   }
 
-   async oauth2(): Promise<string> {
+   async oauth2(clientId: string, clientSecret: string): Promise<string> {
     const result = await this.client.oauth.v2.exchange({
-      /// TODO
+      client_id: clientId,
+      client_secret: clientSecret
     })
+    // TODO -
     console.log(result)
     return 'ok'
   }
