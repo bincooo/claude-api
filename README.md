@@ -1,6 +1,8 @@
-# ClaudeAI for Node.js
+### ClaudeAI for Node.js
 
-## slack Authentication Library for ClaudeAI.
+slack Conversation Library for ClaudeAI.
+
+
 
 ### Usage
 
