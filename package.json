@@ -1,6 +1,6 @@
 {
   "name": "claude-api",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "slack Authentication Library for ClaudeAI.",
   "main": "index.js",
   "scripts": {
@@ -40,7 +40,8 @@
   "dependencies": {
     "@slack/web-api": "^6.8.1",
     "delay": "^5.0.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "p-timeout": "^6.0.0"
   },
   "bugs": {
     "url": "https://github.com/bincooo/claude-api/issues"

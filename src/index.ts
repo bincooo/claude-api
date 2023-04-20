@@ -1,10 +1,12 @@
 import { WebClient } from '@slack/web-api'
 import delay from 'delay'
 import { v4 as uuidv4 } from 'uuid'
+import pTimeout from 'p-timeout'
 import * as types from './types'
 
 const DAY_MS = 1000 * 60 * 60 * 24
 const TYPING = '_Typing…_'
+const WAIT_MS = 1000 * 20
 
 function dat() {
   return new Date()
@@ -95,13 +97,15 @@ class Authenticator {
     text: string,
     channel: string
     conversationId?: string
-    onMessage?: (partialResponse: types.ChatResponse) => void
+    onMessage?: (partialResponse: types.ChatResponse) => void,
+    timeoutMs?: number
   }): Promise<types.ChatResponse> {
     const {
       text,
       channel,
       conversationId = uuidv4(),
-      onMessage
+      onMessage,
+      timeoutMs
     } = opt
 
     let ts = this.channelTs.get(conversationId)
@@ -115,50 +119,68 @@ class Authenticator {
       channel
     })
 
-    let 
-      resultMessage = '',
-      limit = 1
 
     if (!this.channelTs.has(conversationId)) {
       this.channelTs.set(conversationId, result.ts)
       ts = result.ts
     }
-    while(true) {
-      const partialResponse = await this.client?.conversations.replies({ channel, ts, limit })
-      if (!partialResponse.ok) {
-        await delay(500)
-        continue
-      }
-      // console.log('partialResponse', partialResponse.messages)
-      const messages = partialResponse.messages.filter(it => result.message.bot_id !== it.bot_id)
 
-      const message = messages[messages.length - limit]
-      if (message) {
-        if (message.metadata?.event_type) {
-          limit = 2
+    const responseP = new Promise<types.ChatResponse>(async (resolve, reject) => {
+      let resultMessage = '', limit = 1, currTime = dat()
+
+      while(true) {
+        const partialResponse = await this.client?.conversations.replies({ channel, ts, limit })
+        if (!partialResponse.ok) {
           await delay(500)
           continue
         }
+        // console.log('partialResponse', partialResponse.messages)
+        const messages = partialResponse.messages.filter(it => result.message.bot_id !== it.bot_id)
 
-        if (message.text) resultMessage = message.text
-        if (onMessage && message.text !== TYPING) {
-          onMessage({
-            text: message.text?.replace(TYPING, ''),
-            conversationId,
-            channel
-          })
+        const message = messages[messages.length - limit]
+        if (message) {
+          if (message.metadata?.event_type) {
+            limit = 2
+            await delay(500)
+            continue
+          }
+
+          if (message.text) resultMessage = message.text
+          if (onMessage && message.text !== TYPING) {
+            onMessage({
+              text: message.text?.replace(TYPING, ''),
+              conversationId,
+              channel
+            })
+          }
+          if (!message.text || !message.text.endsWith(TYPING)) {
+            break
+          }
+        } else if (currTime + WAIT_MS < dat()) {
+          const errorMessage = `method \`conversations.replies\` ${WAIT_MS}'ms timeout error.`
+          const error = new types.ClaudeError(errorMessage)
+          error.statusCode = 5004
+          error.statusText = 'method `conversations.replies` timeout error'
+          reject(error)
         }
-        if (!message.text || !message.text.endsWith(TYPING)) {
-          break
-        }
+        await delay(500)
       }
-      await delay(500)
-    }
 
-    return {
-      text: resultMessage,
-      conversationId,
-      channel
+      resolve({
+        text: resultMessage,
+        conversationId,
+        channel
+      })
+    })
+
+
+    if (timeoutMs) {
+      return pTimeout(responseP, {
+        milliseconds: timeoutMs,
+        message: 'ClaudeAI timed out waiting for response: ' + timeoutMs + "'ms."
+      })
+    } else {
+      return responseP
     }
   }
 }
