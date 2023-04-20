@@ -6,7 +6,7 @@ import * as types from './types'
 
 const DAY_MS = 1000 * 60 * 60 * 24
 const TYPING = '_Typing…_'
-const WAIT_MS = 1000 * 20
+const WAIT_MS = 1000 * 10
 
 function dat() {
   return new Date()
@@ -110,7 +110,7 @@ class Authenticator {
 
     let ts = this.channelTs.get(conversationId)
     if (this.debug) {
-      console.log('current thread_ts: ', ts)
+      console.log('claude-api mthod `sendMessage` current thread_ts: ', ts)
     }
 
     const result = await this.client?.chat.postMessage({
@@ -128,18 +128,33 @@ class Authenticator {
     const responseP = new Promise<types.ChatResponse>(async (resolve, reject) => {
       let resultMessage = '', limit = 1, currTime = dat()
 
-      while(true) {
+      const repliesTimeout = (): boolean => {
+        if (currTime + WAIT_MS < dat()) {
+          const errorMessage = `method \`conversations.replies\` ${WAIT_MS}'ms timeout error.`
+          const error = new types.ClaudeError(errorMessage)
+          error.statusCode = 5004
+          error.statusText = 'method `conversations.replies` timeout error'
+          reject(error)
+          return true
+        } else return false
+      }
+
+      while (1) {
         const partialResponse = await this.client?.conversations.replies({ channel, ts, limit })
         if (!partialResponse.ok) {
+          if (repliesTimeout()) return
           await delay(500)
           continue
         }
-        // console.log('partialResponse', partialResponse.messages)
+        if (this.debug) {
+          console.log('claude-api mthod `sendMessage` partialResponse', partialResponse.messages)
+        }
         const messages = partialResponse.messages.filter(it => result.message.bot_id !== it.bot_id)
 
         const message = messages[messages.length - limit]
         if (message) {
           if (message.metadata?.event_type) {
+            if (repliesTimeout()) return
             limit = 2
             await delay(500)
             continue
@@ -156,12 +171,8 @@ class Authenticator {
           if (!message.text || !message.text.endsWith(TYPING)) {
             break
           }
-        } else if (currTime + WAIT_MS < dat()) {
-          const errorMessage = `method \`conversations.replies\` ${WAIT_MS}'ms timeout error.`
-          const error = new types.ClaudeError(errorMessage)
-          error.statusCode = 5004
-          error.statusText = 'method `conversations.replies` timeout error'
-          reject(error)
+        } else if (repliesTimeout()) {
+           return
         }
         await delay(500)
       }
@@ -182,6 +193,7 @@ class Authenticator {
     } else {
       return responseP
     }
+
   }
 }
 
