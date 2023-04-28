@@ -1,16 +1,21 @@
 ### ClaudeAI for Node.js
 
-slack Conversation Library for ClaudeAI.
+Slack Conversation Library for ClaudeAI.
 
 
 
 ### Usage
+```bash
+npm install claude-api
+// or
+yarn install claude-api
+```
 
 ```js
 import Authenticator, { type ChatResponse } from 'claude-api'
 // ==========
 let
-		// user-token
+    // user-token
     token = 'xoxp-xxxxx',
     // claude appid
     bot = 'U0xxxx',
@@ -40,7 +45,7 @@ let
 
 ### 授权以及获取user-token
 
-网页登录后[登录](https://app.slack.com), 进入api配置页面[点我跳转]([Claude - chat - Slack](https://api.slack.com/))。
+网页([登录](https://app.slack.com))后, 进入api配置页面([点我跳转](https://api.slack.com/))。
 
 〉》点击 【Create an app】
 
@@ -55,6 +60,7 @@ let
 ​							chat:write,  im:history,  im:write,  mpim:history,  mpim:write
 
 ​	〉》回到顶部【OAuth Tokens for Your Workspace】栏，点击【Install to Workspace】，然后确认授权即可
+
 
 至此，获得拥有一定权限的user-token
 
