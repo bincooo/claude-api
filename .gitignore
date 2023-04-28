@@ -48,3 +48,6 @@ next-env.d.ts
 
 # data dumps
 out/
+
+# lock
+package-lock.json

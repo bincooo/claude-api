@@ -6,7 +6,7 @@ import * as types from './types'
 
 const DAY_MS = 1000 * 60 * 60 * 24
 const TYPING = '_Typing…_'
-const WAIT_MS = 1000 * 10
+const WAIT_MS = 1000 * 15
 
 function dat() {
   return new Date()
@@ -98,14 +98,16 @@ class Authenticator {
     channel: string
     conversationId?: string
     onMessage?: (partialResponse: types.ChatResponse) => void,
-    timeoutMs?: number
+    timeoutMs?: number,
+    retry?: number
   }): Promise<types.ChatResponse> {
     const {
       text,
       channel,
       conversationId = uuidv4(),
       onMessage,
-      timeoutMs
+      timeoutMs,
+      retry = 3
     } = opt
 
     let ts = this.channelTs.get(conversationId)
@@ -113,23 +115,34 @@ class Authenticator {
       console.log('claude-api mthod `sendMessage` current thread_ts: ', ts)
     }
 
-    const result = await this.client?.chat.postMessage({
-      text: `<@${this.bot}> ${text}`,
-      thread_ts: ts,
-      channel
-    })
+    let result = null, retryCount = 0, currTime = 0
 
+    const reply = async () => {
+      currTime = dat()
+      result = await this.client?.chat.postMessage({
+        text: `<@${this.bot}>\n${text}`,
+        thread_ts: ts,
+        channel
+      })
 
-    if (!this.channelTs.has(conversationId)) {
-      this.channelTs.set(conversationId, result.ts)
-      ts = result.ts
+      if (!this.channelTs.has(conversationId)) {
+        this.channelTs.set(conversationId, result.ts)
+        ts = result.ts
+      }
     }
 
-    const responseP = new Promise<types.ChatResponse>(async (resolve, reject) => {
-      let resultMessage = '', limit = 1, currTime = dat()
+    await reply()
 
-      const repliesTimeout = (): boolean => {
+    const responseP = new Promise<types.ChatResponse>(async (resolve, reject) => {
+      let resultMessage = '', limit = 1
+
+      const repliesTimeout = async (needRetry: boolean = false): Promise<boolean> => {
         if (currTime + WAIT_MS < dat()) {
+          if (needRetry && (retry > retryCount)) {
+            retryCount ++
+            await reply()
+            return false
+          }
           const errorMessage = `method \`conversations.replies\` ${WAIT_MS}'ms timeout error.`
           const error = new types.ClaudeError(errorMessage)
           error.statusCode = 5004
@@ -142,19 +155,23 @@ class Authenticator {
       while (1) {
         const partialResponse = await this.client?.conversations.replies({ channel, ts, limit })
         if (!partialResponse.ok) {
-          if (repliesTimeout()) return
+          if (await repliesTimeout()) {
+            return
+          }
           await delay(500)
           continue
         }
+
         if (this.debug) {
           console.log('claude-api mthod `sendMessage` partialResponse', partialResponse.messages)
         }
-        const messages = partialResponse.messages.filter(it => result.message.bot_id !== it.bot_id)
 
+        const messages = partialResponse.messages.filter(it => result.message.bot_id !== it.bot_id)
         const message = messages[messages.length - limit]
+
         if (message) {
           if (message.metadata?.event_type) {
-            if (repliesTimeout()) return
+            if (await repliesTimeout()) return
             limit = 2
             await delay(500)
             continue
@@ -171,8 +188,8 @@ class Authenticator {
           if (!message.text || !message.text.endsWith(TYPING)) {
             break
           }
-        } else if (repliesTimeout()) {
-           return
+        } else if (await repliesTimeout(/* needRetry */true)) {
+          return
         }
         await delay(500)
       }
