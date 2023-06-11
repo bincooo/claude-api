@@ -76,7 +76,9 @@ let
 
 <img src="static/截屏2023-04-18 08.49.20.png" alt="截屏2023-04-18 08.49.20" style="zoom:50%;" />
 
-
+### 注意事项
+由于是Slack转接Claude，Slack是有限流机制[读我](https://api.slack.com/docs/rate-limits#tier_t5)。
+目前使用的是web协议对接，文档说明似乎是1秒一个请求，后面可以尝试使用sock对接可拥有更多的请求流量。
 
 Credits
 Thank you to:
