@@ -2,8 +2,8 @@ import Authenticator from '../src'
 async function main() {
 
   let
-    token = 'xoxp-xxx',
-    bot = 'U054xxxx',
+    token = 'xoxp-5137262897089-5124636131074-5142120975890-ddeaf55a79dcf72fe0e246e754ed0841',
+    bot = 'U05382WAQ1M',
     debug = true,
     text = '讲个故事'
 

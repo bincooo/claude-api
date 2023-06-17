@@ -158,7 +158,7 @@ class Authenticator {
           if (await repliesTimeout()) {
             return
           }
-          await delay(500)
+          await delay(1000)
           continue
         }
 
@@ -173,7 +173,7 @@ class Authenticator {
           if (message.metadata?.event_type) {
             if (await repliesTimeout()) return
             limit = 2
-            await delay(500)
+            await delay(1000)
             continue
           }
 
@@ -191,7 +191,7 @@ class Authenticator {
         } else if (await repliesTimeout(/* needRetry */true)) {
           return
         }
-        await delay(500)
+        await delay(1000)
       }
 
       resolve({
