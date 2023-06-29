@@ -28,6 +28,7 @@ type PartialResponse struct {
 
 	Text  string `json:"text"`
 	BotId string `json:"bot_id"`
+	User  string `json:"user"`
 
 	Metadata struct {
 		EventType string `json:"event_type"`

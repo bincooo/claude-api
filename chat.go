@@ -79,7 +79,8 @@ func (c *Chat) poll(ctx context.Context, message chan PartialResponse) {
 
 		var slice []PartialResponse
 		for _, value := range replies.Messages {
-			if value.BotId != c.BotId && !strings.HasPrefix(value.Text, "<@"+c.BotId+">") {
+			//if value.BotId != c.BotId && !strings.HasPrefix(value.Text, "<@"+c.BotId+">") {
+			if value.User == c.BotId {
 				slice = append(slice, value)
 			}
 		}
@@ -90,16 +91,16 @@ func (c *Chat) poll(ctx context.Context, message chan PartialResponse) {
 			return false
 		}
 
-		value := slice[limit-1]
-		if limit == 1 && value.Metadata.EventType == "claude_moderation" {
+		value := slice[len(slice)-1]
+		if limit == 1 && strings.Contains("|claude_moderation|claude_error_message|", "|"+value.Metadata.EventType+"|") {
 			time.Sleep(time.Second)
-			limit = 2
+			limit = 3
 			return false
 		}
 
-		for index := limit - 1; index >= 0; index-- {
+		for index := len(slice) - 1; index >= 0; index-- {
 			v := slice[index]
-			if v.Metadata.EventType != "claude_moderation" && strings.Contains(v.Text, "I apologize, but I will not provide any responses") {
+			if v.Metadata.EventType != "claude_moderation" && v.Metadata.EventType != "claude_error_message" && strings.Contains(v.Text, "I apologize, but I will not provide any responses") {
 				message <- v
 				return true
 			}
@@ -163,10 +164,17 @@ func (c *Chat) Replies(conversationId string, channel string, limit int) (*Repli
 
 // 发送消息
 func (c *Chat) PostMessage(prompt string, channel string, conversationId string) error {
+	var text string
+	if strings.Contains(prompt, "[@claude]") {
+		text = strings.Replace(prompt, "[@claude]", "<@"+c.BotId+">", -1)
+	} else {
+		text = "<@" + c.BotId + ">\n" + prompt
+	}
+
 	body := B{
+		"text":      text,
 		"channel":   channel,
 		"thread_ts": conversationId,
-		"text":      "<@" + c.BotId + ">\n" + prompt,
 	}
 
 	r, err := c.newRequest(context.Background(), http.MethodPost, "chat.postMessage", body)
