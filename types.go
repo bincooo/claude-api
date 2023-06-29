@@ -1,25 +1,29 @@
 package claude
 
+import "time"
+
 type Chat struct {
 	Options
 
-	channel        string
-	conversationId string
+	//Channel        string
+	//conversationId string
 }
 
 type Options struct {
-	Headers map[string]string
-	Retry   int
-	BotId   string
+	Headers  map[string]string
+	Retry    int
+	BotId    string
+	Channel  string
+	PollTime time.Duration
 }
 
-type ClaudeResponse struct {
+type ResponseClaude struct {
 	Ok    bool   `json:"ok"`
 	Error string `json:"error"`
 }
 
 type RepliesResponse struct {
-	ClaudeResponse
+	ResponseClaude
 	Messages []PartialResponse `json:"messages"`
 }
 

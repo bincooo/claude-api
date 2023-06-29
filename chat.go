@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/google/uuid"
 	"io"
 	"net/http"
 	"net/url"
@@ -15,10 +16,12 @@ import (
 
 type B = map[string]string
 
-func New(token string, botId string) *Chat {
+func New(token, botId, channel string, pollTime time.Duration) *Chat {
 	return NewChat(Options{
-		Retry: 2,
-		BotId: botId,
+		Retry:    2,
+		BotId:    botId,
+		Channel:  channel,
+		PollTime: pollTime,
 		Headers: map[string]string{
 			"Authorization": "Bearer " + token,
 		},
@@ -33,36 +36,32 @@ func (c *Chat) Reply(ctx context.Context, prompt string) (chan PartialResponse, 
 	if c.Retry <= 0 {
 		c.Retry = 1
 	}
-
-	if c.channel == "" {
-		if err := c.NewChannel("chat-9527"); err != nil {
-			return nil, err
-		}
-	}
+	var conversationId string
 
 	for index := 1; index <= c.Retry; index++ {
-		if err := c.PostMessage(prompt, c.channel, c.conversationId); err != nil {
+		if id, err := c.PostMessage(prompt); err != nil {
 			if index >= c.Retry {
 				return nil, err
 			}
 		} else {
+			conversationId = id
 			break
 		}
 	}
 
 	message := make(chan PartialResponse)
-	go c.poll(ctx, message)
+	go c.poll(ctx, conversationId, message)
 	return message, nil
 }
 
 // 轮询回复消息
-func (c *Chat) poll(ctx context.Context, message chan PartialResponse) {
+func (c *Chat) poll(ctx context.Context, conversationId string, message chan PartialResponse) {
 	defer close(message)
 	limit := 1
 
 	// true 结束循环
 	handle := func() bool {
-		replies, err := c.Replies(c.conversationId, c.channel, limit)
+		replies, err := c.Replies(conversationId, limit)
 		if err != nil {
 			message <- PartialResponse{
 				Error: err,
@@ -86,13 +85,13 @@ func (c *Chat) poll(ctx context.Context, message chan PartialResponse) {
 
 		// 没有轮询到回复消息
 		if len(slice) == 0 {
-			time.Sleep(time.Second)
+			time.Sleep(c.PollTime)
 			return false
 		}
 
 		value := slice[limit-1]
 		if limit == 1 && value.Metadata.EventType == "claude_moderation" {
-			time.Sleep(time.Second)
+			time.Sleep(c.PollTime)
 			limit = 2
 			return false
 		}
@@ -116,8 +115,8 @@ func (c *Chat) poll(ctx context.Context, message chan PartialResponse) {
 			message <- value
 		}
 
-		// 等待1秒尽量避免触发限流
-		time.Sleep(time.Second)
+		// 等待时间尽量避免触发限流
+		time.Sleep(c.PollTime)
 		return false
 	}
 
@@ -136,10 +135,10 @@ func (c *Chat) poll(ctx context.Context, message chan PartialResponse) {
 	}
 }
 
-// 获取回复
-func (c *Chat) Replies(conversationId string, channel string, limit int) (*RepliesResponse, error) {
+// Replies 获取回复
+func (c *Chat) Replies(conversationId string, limit int) (*RepliesResponse, error) {
 	r, err := c.newRequest(context.Background(), http.MethodGet, "conversations.replies", B{
-		"channel": channel,
+		"channel": c.Channel,
 		"limit":   strconv.Itoa(limit),
 		"ts":      conversationId,
 	})
@@ -161,44 +160,45 @@ func (c *Chat) Replies(conversationId string, channel string, limit int) (*Repli
 	return &rs, nil
 }
 
-// 发送消息
-func (c *Chat) PostMessage(prompt string, channel string, conversationId string) error {
+// PostMessage 发送消息
+func (c *Chat) PostMessage(prompt string) (conversationId string, err error) {
+	conversationId = uuid.New().String()
 	body := B{
-		"channel":   channel,
-		"thread_ts": conversationId,
+		"channel":   c.Channel,
+		"thread_ts": "",
 		"text":      "<@" + c.BotId + ">\n" + prompt,
 	}
 
-	r, err := c.newRequest(context.Background(), http.MethodPost, "chat.postMessage", body)
-	if err != nil {
-		return err
+	r, err1 := c.newRequest(context.Background(), http.MethodPost, "chat.postMessage", body)
+	if err1 != nil {
+		return "", err1
 	}
 
 	type postMessageResponse struct {
-		ClaudeResponse
+		ResponseClaude
 		Ts string `json:"ts"`
 	}
 	marshal, err := io.ReadAll(r.Body)
 	if err != nil {
-		return nil
+		return "", nil
 	}
 
 	var pmr postMessageResponse
 	if e := json.Unmarshal(marshal, &pmr); e != nil {
-		return e
+		return "", e
 	}
 
 	if !pmr.Ok {
-		return errors.New(pmr.Error)
+		return "", errors.New(pmr.Error)
 	}
 
-	if c.conversationId == "" {
-		c.conversationId = pmr.Ts
-	}
-	return nil
+	//if c.conversationId == "" {
+	//	c.conversationId = pmr.Ts
+	//}
+	return pmr.Ts, nil
 }
 
-// 创建频道
+// NewChannel 创建频道
 func (c *Chat) NewChannel(name string) error {
 
 	r, err := c.newRequest(context.Background(), http.MethodGet, "conversations.list", B{"limit": "2000", "types": "public_channel,private_channel"})
@@ -207,7 +207,7 @@ func (c *Chat) NewChannel(name string) error {
 	}
 
 	type listResponse struct {
-		ClaudeResponse
+		ResponseClaude
 		Channels []struct {
 			Id   string `json:"id"`
 			Name string `json:"name"`
@@ -242,7 +242,7 @@ func (c *Chat) NewChannel(name string) error {
 	// 检查是否已存在频道
 	for _, channel := range lrs.Channels {
 		if channel.Name == name {
-			c.channel = channel.Id
+			c.Channel = channel.Id
 			return nil
 		}
 	}
@@ -259,7 +259,7 @@ func (c *Chat) NewChannel(name string) error {
 	}
 
 	type createResponse struct {
-		ClaudeResponse
+		ResponseClaude
 		Channel struct {
 			Id   string `json:"id"`
 			Name string `json:"name"`
@@ -280,7 +280,7 @@ func (c *Chat) NewChannel(name string) error {
 		return err
 	}
 
-	var rs ClaudeResponse
+	var rs ResponseClaude
 	if e := handle(r, &rs); e != nil {
 		return e
 	}
