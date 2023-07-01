@@ -1,46 +1,43 @@
-### ClaudeAI for Node.js
-
-Slack Conversation Library for ClaudeAI.
-
-
-
-### Usage
-```bash
-npm install claude-api
-// or
-yarn install claude-api
+### 这是一个go调用claude api的库
+#### example1
 ```
+package main
 
-```js
-import Authenticator, { type ChatResponse } from 'claude-api'
-// ==========
-let
-    // user-token
-    token = 'xoxp-xxxxx',
-    // claude appid
-    bot = 'U0xxxx',
-    text = '讲个故事'
+import (
+	"context"
+	"fmt"
+	"github.com/Anyc66666666/claude-api"
+	"log"
+	"time"
+)
 
-  const authenticator = new Authenticator(token, bot)
-  // 创建一个频道，已存在则直接返回频道ID
-  const channel = await authenticator.newChannel('chat-7890')
-  let result: ChatResponse = await authenticator.sendMessage({
-    text, channel, onMessage: (originalMessage: ChatResponse) => {
-      // console.log(originalMessage)
-    }
-  })
-  console.log('==============1\n', result)
+func main() {
+	chat := claude.New("xoxp-***f", "U05A5***", "C05EW***", time.Second*2, time.Second*45)
+	ctx := context.Background()
+	res, err := chat.Reply(ctx, "什么是claude")
+	if err != nil {
+		log.Println(err)
+	}
 
-  text = '接着讲，接下来进入修仙情节'
-  result = await authenticator.sendMessage({
-    text, channel,
-    conversationId: result.conversationId,
-    onMessage: (originalMessage: ChatResponse) => {
-      // console.log(originalMessage)
-    }
-  })
+	for {
+
+		select {
+
+		case data := <-res:
+			if data.Error != nil {
+				log.Println(data.Error)
+				return
+			}
+			fmt.Println(data.Text)
+			return
+
+		}
+
+	}
+}
+
 ```
-
+#### 其他的例子可以详情看[这里](https://github.com/Anyc66666666/claude-api/tree/main/examples)
 
 
 ### 授权以及获取user-token
