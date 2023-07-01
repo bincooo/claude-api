@@ -16,23 +16,40 @@ import (
 
 type B = map[string]string
 
-func New(token, botId, channel string, pollTime time.Duration) *Chat {
-	return NewChat(Options{
+func New(token, botId, channel string, pollTime, timeout time.Duration) *Chat {
+	return NewChat(&Options{
 		Retry:    2,
 		BotId:    botId,
 		Channel:  channel,
 		PollTime: pollTime,
-		Headers: map[string]string{
-			"Authorization": "Bearer " + token,
-		},
+		Timeout:  timeout,
+		Token:    token,
 	})
 }
 
-func NewChat(opt Options) *Chat {
+func NewChat(opt *Options) *Chat {
 	return &Chat{Options: opt}
 }
 
+// NewDefaultOptions 需要填写botId,channel,token
+func NewDefaultOptions() *Options {
+	return &Options{
+		Retry:    2,
+		BotId:    "",
+		Channel:  "",
+		PollTime: time.Second * 3,
+		Timeout:  time.Second * 45,
+		Token:    "",
+	}
+}
+
 func (c *Chat) Reply(ctx context.Context, prompt string) (chan PartialResponse, error) {
+	ctx1, cancel := context.WithTimeout(ctx, c.Timeout)
+	go func(duration time.Duration, cancelFunc context.CancelFunc) {
+		time.Sleep(duration)
+		cancelFunc()
+	}(c.Timeout*2, cancel)
+
 	if c.Retry <= 0 {
 		c.Retry = 1
 	}
@@ -50,7 +67,7 @@ func (c *Chat) Reply(ctx context.Context, prompt string) (chan PartialResponse, 
 	}
 
 	message := make(chan PartialResponse)
-	go c.poll(ctx, conversationId, message)
+	go c.poll(ctx1, conversationId, message)
 	return message, nil
 }
 
@@ -59,7 +76,7 @@ func (c *Chat) poll(ctx context.Context, conversationId string, message chan Par
 	defer close(message)
 	limit := 1
 
-	// true 结束循环
+	// true 结束循环 //false继续轮询
 	handle := func() bool {
 		replies, err := c.Replies(conversationId, limit)
 		if err != nil {
@@ -107,12 +124,7 @@ func (c *Chat) poll(ctx context.Context, conversationId string, message chan Par
 
 		// 结尾没有了[_Typing…_]，结束接收
 		if !strings.HasSuffix(value.Text, Typing) {
-			message <- value
 			return true
-		}
-
-		if value.Text != Typing {
-			message <- value
 		}
 
 		// 等待时间尽量避免触发限流
@@ -315,9 +327,7 @@ func (c *Chat) newRequest(ctx context.Context, method string, route string, para
 		return nil, err
 	}
 
-	for k, v := range c.Headers {
-		request.Header.Add(k, v)
-	}
+	request.Header.Add("Authorization", "Bearer "+c.Token)
 
 	if method != http.MethodGet {
 		request.Header.Add("Content-Type", "application/json")

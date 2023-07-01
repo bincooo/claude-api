@@ -3,18 +3,19 @@ package claude
 import "time"
 
 type Chat struct {
-	Options
+	*Options
 
 	//Channel        string
 	//conversationId string
 }
 
 type Options struct {
-	Headers  map[string]string
+	Token    string
 	Retry    int
 	BotId    string
 	Channel  string
 	PollTime time.Duration
+	Timeout  time.Duration
 }
 
 type ResponseClaude struct {
