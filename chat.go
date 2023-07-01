@@ -158,9 +158,9 @@ func (c *Chat) Replies(conversationId string, limit int) (*RepliesResponse, erro
 		return nil, err
 	}
 
-	marshal, err := io.ReadAll(r.Body)
-	if err != nil {
-		return nil, err
+	marshal, err1 := io.ReadAll(r.Body)
+	if err1 != nil {
+		return nil, err1
 	}
 
 	var rs RepliesResponse
