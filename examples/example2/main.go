@@ -9,9 +9,18 @@ import (
 )
 
 func main() {
-	chat := claude.New("xoxp-***f", "U05A5***", "C05EW***", time.Second*2, time.Second*45)
+
+	chat := claude.NewChat(&claude.Options{
+		Token:    "xoxp-***f",
+		Retry:    2,
+		BotId:    "U05A5***",
+		Channel:  "C05EW***",
+		PollTime: time.Second * 2,
+		Timeout:  time.Second * 45,
+	})
+
 	ctx := context.Background()
-	res, err := chat.Reply(ctx, "什么是习近平新时代中国特色社会主义思想")
+	res, err := chat.Reply(ctx, "什么是claude")
 	if err != nil {
 		log.Println(err)
 	}
