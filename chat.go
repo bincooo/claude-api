@@ -124,6 +124,7 @@ func (c *Chat) poll(ctx context.Context, conversationId string, message chan Par
 
 		// 结尾没有了[_Typing…_]，结束接收
 		if !strings.HasSuffix(value.Text, Typing) {
+			message <- value
 			return true
 		}
 
