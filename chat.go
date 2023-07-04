@@ -41,7 +41,7 @@ func (c *Chat) Reply(ctx context.Context, prompt string) (chan PartialResponse, 
 	}
 
 	for index := 1; index <= c.Retry; index++ {
-		if err := c.PostMessage(prompt, c.channel, c.conversationId); err != nil {
+		if err := c.PostMessage(prompt); err != nil {
 			if index >= c.Retry {
 				return nil, err
 			}
@@ -62,7 +62,7 @@ func (c *Chat) poll(ctx context.Context, message chan PartialResponse) {
 
 	// true 结束循环
 	handle := func() bool {
-		replies, err := c.Replies(c.conversationId, c.channel, limit)
+		replies, err := c.Replies(limit)
 		if err != nil {
 			message <- PartialResponse{
 				Error: err,
@@ -126,7 +126,7 @@ func (c *Chat) poll(ctx context.Context, message chan PartialResponse) {
 		select {
 		case <-ctx.Done():
 			message <- PartialResponse{
-				Error: errors.New("请求超时"),
+				Error: errors.New("polling is timeout"),
 			}
 			return
 		default:
@@ -138,11 +138,11 @@ func (c *Chat) poll(ctx context.Context, message chan PartialResponse) {
 }
 
 // 获取回复
-func (c *Chat) Replies(conversationId string, channel string, limit int) (*RepliesResponse, error) {
+func (c *Chat) Replies(limit int) (*RepliesResponse, error) {
 	r, err := c.newRequest(context.Background(), http.MethodGet, "conversations.replies", B{
-		"channel": channel,
+		"channel": c.channel,
 		"limit":   strconv.Itoa(limit),
-		"ts":      conversationId,
+		"ts":      c.conversationId,
 	})
 	if err != nil {
 		return nil, err
@@ -163,7 +163,7 @@ func (c *Chat) Replies(conversationId string, channel string, limit int) (*Repli
 }
 
 // 发送消息
-func (c *Chat) PostMessage(prompt string, channel string, conversationId string) error {
+func (c *Chat) PostMessage(prompt string) error {
 	var text string
 	if strings.Contains(prompt, "[@claude]") {
 		text = strings.Replace(prompt, "[@claude]", "<@"+c.BotId+">", -1)
@@ -173,8 +173,8 @@ func (c *Chat) PostMessage(prompt string, channel string, conversationId string)
 
 	body := B{
 		"text":      text,
-		"channel":   channel,
-		"thread_ts": conversationId,
+		"channel":   c.channel,
+		"thread_ts": c.conversationId,
 	}
 
 	r, err := c.newRequest(context.Background(), http.MethodPost, "chat.postMessage", body)
@@ -183,7 +183,7 @@ func (c *Chat) PostMessage(prompt string, channel string, conversationId string)
 	}
 
 	type postMessageResponse struct {
-		ClaudeResponse
+		BasicResponse
 		Ts string `json:"ts"`
 	}
 	marshal, err := io.ReadAll(r.Body)
@@ -206,7 +206,7 @@ func (c *Chat) PostMessage(prompt string, channel string, conversationId string)
 	return nil
 }
 
-// 创建频道
+// 创建频道,先查询已存在直接返回，否则创建并加入bot
 func (c *Chat) NewChannel(name string) error {
 
 	r, err := c.newRequest(context.Background(), http.MethodGet, "conversations.list", B{"limit": "2000", "types": "public_channel,private_channel"})
@@ -215,7 +215,7 @@ func (c *Chat) NewChannel(name string) error {
 	}
 
 	type listResponse struct {
-		ClaudeResponse
+		BasicResponse
 		Channels []struct {
 			Id   string `json:"id"`
 			Name string `json:"name"`
@@ -224,7 +224,7 @@ func (c *Chat) NewChannel(name string) error {
 
 	handle := func(resp *http.Response, model any) error {
 		if resp.StatusCode != 200 {
-			return errors.New("请求失败：" + resp.Status)
+			return errors.New(resp.Status)
 		}
 
 		marshal, e := io.ReadAll(resp.Body)
@@ -267,7 +267,7 @@ func (c *Chat) NewChannel(name string) error {
 	}
 
 	type createResponse struct {
-		ClaudeResponse
+		BasicResponse
 		Channel struct {
 			Id   string `json:"id"`
 			Name string `json:"name"`
@@ -288,7 +288,7 @@ func (c *Chat) NewChannel(name string) error {
 		return err
 	}
 
-	var rs ClaudeResponse
+	var rs BasicResponse
 	if e := handle(r, &rs); e != nil {
 		return e
 	}

@@ -13,13 +13,13 @@ type Options struct {
 	BotId   string
 }
 
-type ClaudeResponse struct {
+type BasicResponse struct {
 	Ok    bool   `json:"ok"`
 	Error string `json:"error"`
 }
 
 type RepliesResponse struct {
-	ClaudeResponse
+	BasicResponse
 	Messages []PartialResponse `json:"messages"`
 }
 
