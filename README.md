@@ -8,7 +8,7 @@ Slack Conversation Library for ClaudeAI.
 ```bash
 npm install claude-api
 // or
-yarn install claude-api
+yarn add claude-api
 ```
 
 ```js
