@@ -4,17 +4,19 @@ import (
 	"context"
 	"fmt"
 	"github.com/bincooo/claude-api"
+	"github.com/bincooo/claude-api/types"
+	"github.com/bincooo/claude-api/vars"
 	"time"
 )
 
 func main() {
 	const (
-		token = "xoxp-xxx"
-		botId = "U0xxxx"
+		token = "sk-ant-xxxx"
 	)
-	chat := claude.New(token, botId)
-	// 如果不手建频道，默认使用chat-9527
-	if err := chat.NewChannel("chat-7890"); err != nil {
+	options := claude.NewDefaultOptions(token, "", vars.Model4WebClaude2)
+	options.Agency = "http://127.0.0.1:7890"
+	chat, err := claude.New(options)
+	if err != nil {
 		panic(err)
 	}
 
@@ -45,7 +47,7 @@ func main() {
 	Println(partialResponse)
 }
 
-func Println(partialResponse chan claude.PartialResponse) {
+func Println(partialResponse chan types.PartialResponse) {
 	for {
 		message, ok := <-partialResponse
 		if !ok {
