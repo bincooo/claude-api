@@ -1,8 +1,8 @@
-### ClaudeAI for Node.js
+### ClaudeAI for Node.js/GoLang
 
 Slack Conversation Library for ClaudeAI.
 
-
+Web Conversation Library for ClaudeAI.  [link](https://claude.ai/chat)
 
 ### Usage
 ```bash
@@ -42,6 +42,14 @@ let
 ```
 
 
+
+### New 🎉🎉🎉
+
+添加了web新出的claude-2 🎉
+
+食用方法，在浏览器内登陆，打开开发者工具（F12），复制Cookie中的sessionKey即可。
+
+sessionKey便是程序中的token，appid就不需要了，具体使用参考示例：examples/claude-2/main.go
 
 ### 授权以及获取user-token
 
