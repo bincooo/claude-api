@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/bincooo/claude-api/types"
 	"github.com/google/uuid"
 	"github.com/wangluozhe/requests"
@@ -104,7 +103,7 @@ func (wc *WebClaude2) resolve(ctx context.Context, r *models.Response, message c
 	block := []byte("data: ")
 	handle := func() bool {
 		original, _, err := reader.ReadLine()
-		fmt.Println(string(original))
+		//fmt.Println(string(original))
 		if err != nil {
 			if err == io.EOF {
 				return true
