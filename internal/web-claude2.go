@@ -183,7 +183,7 @@ func (wc *WebClaude2) createConversation() error {
 	headers["user-agent"] = UA
 
 	params := make(map[string]any)
-	params["name"] = "jj1"
+	params["name"] = ""
 	params["uuid"] = uuid.NewString()
 	response, err := wc.newRequest(30*time.Second, http.MethodPost, "organizations/"+wc.organizationId+"/chat_conversations", headers, params)
 	if err != nil {
