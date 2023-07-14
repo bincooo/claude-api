@@ -2,7 +2,10 @@ module github.com/bincooo/claude-api
 
 go 1.20
 
-require github.com/wangluozhe/requests v1.1.15
+require (
+	github.com/google/uuid v1.3.0
+	github.com/wangluozhe/requests v1.1.15
+)
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect

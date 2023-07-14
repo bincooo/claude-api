@@ -6,7 +6,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/bincooo/claude-api/types"
+	"github.com/google/uuid"
 	"github.com/wangluozhe/requests"
 	"github.com/wangluozhe/requests/models"
 	"github.com/wangluozhe/requests/url"
@@ -14,6 +16,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -90,39 +93,40 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string) (chan types.Part
 	}
 
 	message := make(chan types.PartialResponse)
-	go wc.resolve(response, message)
+	go wc.resolve(ctx, response, message)
 	return message, nil
 }
 
-func (wc *WebClaude2) resolve(r *models.Response, message chan types.PartialResponse) {
+func (wc *WebClaude2) resolve(ctx context.Context, r *models.Response, message chan types.PartialResponse) {
 	defer wc.mu.Unlock()
 	defer close(message)
 	reader := bufio.NewReader(r.Body)
 	block := []byte("data: ")
-	for {
+	handle := func() bool {
 		original, _, err := reader.ReadLine()
+		fmt.Println(string(original))
 		if err != nil {
 			if err == io.EOF {
-				return
+				return true
 			}
 			message <- types.PartialResponse{
 				Error: err,
 			}
-			return
+			return true
 		}
 
 		if !bytes.HasPrefix(original, block) {
-			continue
+			return false
 		}
 		if !bytes.HasSuffix(original, []byte("}")) {
-			continue
+			return false
 		}
 
 		original = bytes.TrimPrefix(original, block)
 		var response webClaude2Response
 		if e := IgnorePanicUnmarshal(original, &response); e != nil {
 			//fmt.Println(e)
-			continue
+			return false
 		}
 
 		message <- types.PartialResponse{
@@ -130,7 +134,20 @@ func (wc *WebClaude2) resolve(r *models.Response, message chan types.PartialResp
 		}
 
 		if response.StopReason == "stop_sequence" {
+			return true
+		}
+
+		return false
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
 			return
+		default:
+			if handle() {
+				return
+			}
 		}
 	}
 }
@@ -138,7 +155,7 @@ func (wc *WebClaude2) resolve(r *models.Response, message chan types.PartialResp
 func (wc *WebClaude2) getOrganization() error {
 	//headers := make(Kv)
 	//headers["user-agent"] = UA
-	response, err := wc.newRequest(context.Background(), http.MethodGet, "organizations", nil, nil)
+	response, err := wc.newRequest(30*time.Second, http.MethodGet, "organizations", nil, nil)
 	if err != nil {
 		return err
 	}
@@ -164,7 +181,11 @@ func (wc *WebClaude2) createConversation() error {
 
 	headers := make(Kv)
 	headers["user-agent"] = UA
-	response, err := wc.newRequest(context.Background(), http.MethodGet, "organizations/"+wc.organizationId+"/chat_conversations", headers, nil)
+
+	params := make(map[string]any)
+	params["name"] = "jj1"
+	params["uuid"] = uuid.NewString()
+	response, err := wc.newRequest(30*time.Second, http.MethodPost, "organizations/"+wc.organizationId+"/chat_conversations", headers, params)
 	if err != nil {
 		return err
 	}
@@ -173,12 +194,12 @@ func (wc *WebClaude2) createConversation() error {
 	if e != nil {
 		return e
 	}
-	result := make([]Kv, 0)
+	result := make(Kv, 0)
 	if e = json.Unmarshal(marshal, &result); e != nil {
 		return e
 	}
 
-	if uid, _ := result[0]["uuid"]; uid != "" {
+	if uid, _ := result["uuid"]; uid != "" {
 		wc.conversationId = uid
 		return nil
 	}
@@ -207,10 +228,10 @@ func (wc *WebClaude2) PostMessage(ctx context.Context, prompt string) (*models.R
 	headers := make(Kv)
 	headers["user-agent"] = UA
 	headers["accept"] = "text/event-stream"
-	return wc.newRequest(ctx, http.MethodPost, "append_message", headers, params)
+	return wc.newRequest(10*time.Minute, http.MethodPost, "append_message", headers, params)
 }
 
-func (wc *WebClaude2) newRequest(ctx context.Context, method string, route string, headers map[string]string, params map[string]any) (*models.Response, error) {
+func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route string, headers map[string]string, params map[string]any) (*models.Response, error) {
 	if method == http.MethodGet {
 		var search []string
 		for key, value := range params {
@@ -227,6 +248,7 @@ func (wc *WebClaude2) newRequest(ctx context.Context, method string, route strin
 	}
 
 	req := url.NewRequest()
+	req.Timeout = timeout
 	if method != http.MethodGet && params != nil {
 		req.Json = params
 	}
