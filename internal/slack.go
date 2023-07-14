@@ -21,6 +21,26 @@ const (
 	ClackTyping = "_Typing…_"
 )
 
+type BasicResponse struct {
+	Ok      bool   `json:"ok"`
+	Error   string `json:"error"`
+	RawData []byte `json:"-"`
+}
+
+type RepliesResponse struct {
+	BasicResponse
+	Messages []repliesMessage `json:"messages"`
+}
+
+type repliesMessage struct {
+	types.PartialResponse
+	BotId    string `json:"bot_id"`
+	User     string `json:"user"`
+	Metadata struct {
+		EventType string `json:"event_type"`
+	} `json:"metadata"`
+}
+
 type Kv = map[string]string
 
 type Slack struct {
@@ -77,12 +97,13 @@ func (s *Slack) poll(ctx context.Context, message chan types.PartialResponse) {
 
 		if !replies.Ok {
 			message <- types.PartialResponse{
-				Error: errors.New(replies.Error),
+				Error:   errors.New(replies.Error),
+				RawData: replies.RawData,
 			}
 			return true
 		}
 
-		var slice []types.PartialResponse
+		var slice []repliesMessage
 		for _, value := range replies.Messages {
 			//if value.BotId != s.BotId && !strings.HasPrefix(value.Text, "<@"+s.BotId+">") {
 			if value.User == s.BotId {
@@ -106,7 +127,11 @@ func (s *Slack) poll(ctx context.Context, message chan types.PartialResponse) {
 		for index := len(slice) - 1; index >= 0; index-- {
 			v := slice[index]
 			if v.Metadata.EventType != "claude_moderation" && v.Metadata.EventType != "claude_error_message" && strings.Contains(v.Text, "I apologize, but I will not provide any responses") {
-				message <- v
+				message <- types.PartialResponse{
+					Error:   v.PartialResponse.Error,
+					Text:    v.PartialResponse.Text,
+					RawData: replies.RawData,
+				}
 				return true
 			}
 			value = v
@@ -114,12 +139,20 @@ func (s *Slack) poll(ctx context.Context, message chan types.PartialResponse) {
 
 		// 结尾没有了[_Typing…_]，结束接收
 		if !strings.HasSuffix(value.Text, ClackTyping) {
-			message <- value
+			message <- types.PartialResponse{
+				Error:   value.PartialResponse.Error,
+				Text:    value.PartialResponse.Text,
+				RawData: replies.RawData,
+			}
 			return true
 		}
 
 		if value.Text != ClackTyping {
-			message <- value
+			message <- types.PartialResponse{
+				Error:   value.PartialResponse.Error,
+				Text:    value.PartialResponse.Text,
+				RawData: replies.RawData,
+			}
 		}
 
 		// 等待1秒尽量避免触发限流
@@ -143,7 +176,7 @@ func (s *Slack) poll(ctx context.Context, message chan types.PartialResponse) {
 }
 
 // 获取回复
-func (s *Slack) Replies(limit int) (*types.RepliesResponse, error) {
+func (s *Slack) Replies(limit int) (*RepliesResponse, error) {
 	r, err := s.newRequest(context.Background(), http.MethodGet, "conversations.replies", Kv{
 		"channel": s.channel,
 		"limit":   strconv.Itoa(limit),
@@ -158,12 +191,13 @@ func (s *Slack) Replies(limit int) (*types.RepliesResponse, error) {
 		return nil, err
 	}
 
-	var rs types.RepliesResponse
+	var rs RepliesResponse
 	err = json.Unmarshal(marshal, &rs)
 	if err != nil {
 		return nil, err
 	}
 
+	rs.RawData = marshal
 	return &rs, nil
 }
 
@@ -188,7 +222,7 @@ func (s *Slack) PostMessage(prompt string) error {
 	}
 
 	type postMessageResponse struct {
-		types.BasicResponse
+		BasicResponse
 		Ts string `json:"ts"`
 	}
 	marshal, err := io.ReadAll(r.Body)
@@ -220,7 +254,7 @@ func (s *Slack) NewChannel(name string) error {
 	}
 
 	type listResponse struct {
-		types.BasicResponse
+		BasicResponse
 		Channels []struct {
 			Id   string `json:"id"`
 			Name string `json:"name"`
@@ -272,7 +306,7 @@ func (s *Slack) NewChannel(name string) error {
 	}
 
 	type createResponse struct {
-		types.BasicResponse
+		BasicResponse
 		Channel struct {
 			Id   string `json:"id"`
 			Name string `json:"name"`
@@ -293,7 +327,7 @@ func (s *Slack) NewChannel(name string) error {
 		return err
 	}
 
-	var rs types.BasicResponse
+	var rs BasicResponse
 	if e := handle(r, &rs); e != nil {
 		return e
 	}

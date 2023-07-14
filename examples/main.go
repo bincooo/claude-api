@@ -11,7 +11,7 @@ import (
 
 func main() {
 	const (
-		token = "xoxp-5137262897089-5124636131074-5561492545425-3b5697e906b5509f9bb2996ca49327a3"
+		token = "xoxp-xxx"
 		botId = "U05382WAQ1M"
 	)
 	options := claude.NewDefaultOptions(token, botId, vars.Model4Slack)
