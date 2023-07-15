@@ -17,24 +17,8 @@ type Options struct {
 	Agency  string            // 本地代理
 }
 
-type BasicResponse struct {
-	Ok    bool   `json:"ok"`
-	Error string `json:"error"`
-}
-
-type RepliesResponse struct {
-	BasicResponse
-	Messages []PartialResponse `json:"messages"`
-}
-
 type PartialResponse struct {
-	Error error `json:"-"`
-
-	Text  string `json:"text"`
-	BotId string `json:"bot_id"`
-	User  string `json:"user"`
-
-	Metadata struct {
-		EventType string `json:"event_type"`
-	} `json:"metadata"`
+	Error   error  `json:"-"`
+	Text    string `json:"text"`
+	RawData []byte `json:"-"`
 }

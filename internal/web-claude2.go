@@ -75,7 +75,7 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string) (chan types.Part
 
 	var response *models.Response
 	for index := 1; index <= wc.Retry; index++ {
-		r, err := wc.PostMessage(ctx, prompt)
+		r, err := wc.PostMessage(5*time.Minute, prompt)
 		if err != nil {
 			if index >= wc.Retry {
 				wc.mu.Unlock()
@@ -129,7 +129,8 @@ func (wc *WebClaude2) resolve(ctx context.Context, r *models.Response, message c
 		}
 
 		message <- types.PartialResponse{
-			Text: response.Completion,
+			Text:    response.Completion,
+			RawData: original,
 		}
 
 		if response.StopReason == "stop_sequence" {
@@ -142,6 +143,9 @@ func (wc *WebClaude2) resolve(ctx context.Context, r *models.Response, message c
 	for {
 		select {
 		case <-ctx.Done():
+			message <- types.PartialResponse{
+				Error: errors.New("resolve timeout"),
+			}
 			return
 		default:
 			if handle() {
@@ -205,7 +209,7 @@ func (wc *WebClaude2) createConversation() error {
 	return errors.New("failed to fetch the `conversation-id`")
 }
 
-func (wc *WebClaude2) PostMessage(ctx context.Context, prompt string) (*models.Response, error) {
+func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string) (*models.Response, error) {
 	if wc.organizationId == "" {
 		return nil, errors.New("there is no corresponding `organization-id`")
 	}
@@ -227,7 +231,7 @@ func (wc *WebClaude2) PostMessage(ctx context.Context, prompt string) (*models.R
 	headers := make(Kv)
 	headers["user-agent"] = UA
 	headers["accept"] = "text/event-stream"
-	return wc.newRequest(10*time.Minute, http.MethodPost, "append_message", headers, params)
+	return wc.newRequest(timeout, http.MethodPost, "append_message", headers, params)
 }
 
 func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route string, headers map[string]string, params map[string]any) (*models.Response, error) {
