@@ -101,13 +101,21 @@ func (wc *WebClaude2) resolve(ctx context.Context, r *models.Response, message c
 	defer close(message)
 	reader := bufio.NewReader(r.Body)
 	block := []byte("data: ")
+	original := make([]byte, 0)
+
+	// return true 结束轮询
 	handle := func() bool {
-		original, _, err := reader.ReadLine()
+		line, hasMore, err := reader.ReadLine()
+		original = append(original, line...)
+		if hasMore {
+			return false
+		}
 		//fmt.Println(string(original))
+		if err == io.EOF {
+			return true
+		}
+
 		if err != nil {
-			if err == io.EOF {
-				return true
-			}
 			message <- types.PartialResponse{
 				Error: err,
 			}
