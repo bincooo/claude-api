@@ -122,23 +122,27 @@ func (wc *WebClaude2) resolve(ctx context.Context, r *models.Response, message c
 			return true
 		}
 
-		if !bytes.HasPrefix(original, block) {
+		dst := make([]byte, len(original))
+		copy(dst, original)
+		original = make([]byte, 0)
+
+		if !bytes.HasPrefix(dst, block) {
 			return false
 		}
-		if !bytes.HasSuffix(original, []byte("}")) {
+		if !bytes.HasSuffix(dst, []byte("}")) {
 			return false
 		}
 
-		original = bytes.TrimPrefix(original, block)
+		dst = bytes.TrimPrefix(dst, block)
 		var response webClaude2Response
-		if e := IgnorePanicUnmarshal(original, &response); e != nil {
+		if e := IgnorePanicUnmarshal(dst, &response); e != nil {
 			//fmt.Println(e)
 			return false
 		}
 
 		message <- types.PartialResponse{
 			Text:    response.Completion,
-			RawData: original,
+			RawData: dst,
 		}
 
 		if response.StopReason == "stop_sequence" {
