@@ -101,36 +101,48 @@ func (wc *WebClaude2) resolve(ctx context.Context, r *models.Response, message c
 	defer close(message)
 	reader := bufio.NewReader(r.Body)
 	block := []byte("data: ")
+	original := make([]byte, 0)
+
+	// return true 结束轮询
 	handle := func() bool {
-		original, _, err := reader.ReadLine()
+		line, hasMore, err := reader.ReadLine()
+		original = append(original, line...)
+		if hasMore {
+			return false
+		}
 		//fmt.Println(string(original))
+		if err == io.EOF {
+			return true
+		}
+
 		if err != nil {
-			if err == io.EOF {
-				return true
-			}
 			message <- types.PartialResponse{
 				Error: err,
 			}
 			return true
 		}
 
-		if !bytes.HasPrefix(original, block) {
+		dst := make([]byte, len(original))
+		copy(dst, original)
+		original = make([]byte, 0)
+
+		if !bytes.HasPrefix(dst, block) {
 			return false
 		}
-		if !bytes.HasSuffix(original, []byte("}")) {
+		if !bytes.HasSuffix(dst, []byte("}")) {
 			return false
 		}
 
-		original = bytes.TrimPrefix(original, block)
+		dst = bytes.TrimPrefix(dst, block)
 		var response webClaude2Response
-		if e := IgnorePanicUnmarshal(original, &response); e != nil {
+		if e := IgnorePanicUnmarshal(dst, &response); e != nil {
 			//fmt.Println(e)
 			return false
 		}
 
 		message <- types.PartialResponse{
 			Text:    response.Completion,
-			RawData: original,
+			RawData: dst,
 		}
 
 		if response.StopReason == "stop_sequence" {
