@@ -7,10 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/bincooo/claude-api/types"
+	"github.com/bincooo/requests"
+	"github.com/bincooo/requests/models"
+	"github.com/bincooo/requests/url"
 	"github.com/google/uuid"
-	"github.com/wangluozhe/requests"
-	"github.com/wangluozhe/requests/models"
-	"github.com/wangluozhe/requests/url"
 	"io"
 	"net/http"
 	"strings"
@@ -231,7 +231,14 @@ func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attr *ty
 
 	params := make(map[string]any)
 	if attr != nil {
-		params["attachments"] = []types.Attachment{*attr}
+		params["attachments"] = []any{
+			map[string]any{
+				"extracted_content": attr.Content,
+				"file_size":         attr.FileSize,
+				"file_name":         attr.FileName,
+				"file_type":         attr.FileType,
+			},
+		}
 	} else {
 		params["attachments"] = []any{}
 	}
@@ -291,7 +298,7 @@ func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route str
 	case http.MethodGet:
 		return requests.Get(WebClaude2BU+"/"+route, req)
 	default:
-		return requests.Post(WebClaude2BU+"/"+route, req)
+		return requests.RequestStream(http.MethodPost, WebClaude2BU+"/"+route, req)
 	}
 }
 
