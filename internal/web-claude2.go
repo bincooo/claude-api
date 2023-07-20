@@ -53,7 +53,7 @@ func (wc *WebClaude2) NewChannel(string) error {
 	return nil
 }
 
-func (wc *WebClaude2) Reply(ctx context.Context, prompt string) (chan types.PartialResponse, error) {
+func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attr *types.Attachment) (chan types.PartialResponse, error) {
 	wc.mu.Lock()
 	if wc.Retry <= 0 {
 		wc.Retry = 1
@@ -75,7 +75,7 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string) (chan types.Part
 
 	var response *models.Response
 	for index := 1; index <= wc.Retry; index++ {
-		r, err := wc.PostMessage(5*time.Minute, prompt)
+		r, err := wc.PostMessage(5*time.Minute, prompt, attr)
 		if err != nil {
 			if index >= wc.Retry {
 				wc.mu.Unlock()
@@ -221,7 +221,7 @@ func (wc *WebClaude2) createConversation() error {
 	return errors.New("failed to fetch the `conversation-id`")
 }
 
-func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string) (*models.Response, error) {
+func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attr *types.Attachment) (*models.Response, error) {
 	if wc.organizationId == "" {
 		return nil, errors.New("there is no corresponding `organization-id`")
 	}
@@ -230,7 +230,11 @@ func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string) (*models
 	}
 
 	params := make(map[string]any)
-	params["attachments"] = []any{}
+	if attr != nil {
+		params["attachments"] = []types.Attachment{*attr}
+	} else {
+		params["attachments"] = []any{}
+	}
 	params["conversation_uuid"] = wc.conversationId
 	params["organization_uuid"] = wc.organizationId
 	params["text"] = prompt

@@ -6,7 +6,14 @@ import (
 
 type Chat interface {
 	NewChannel(name string) error
-	Reply(ctx context.Context, prompt string) (chan PartialResponse, error)
+	Reply(ctx context.Context, prompt string, attr *Attachment) (chan PartialResponse, error)
+}
+
+type Attachment struct {
+	Content  string `json:"extracted_content"`
+	FileName string `json:"file_name"`
+	FileSize int    `json:"file_size"`
+	FileType string `json:"file_type"`
 }
 
 type Options struct {
