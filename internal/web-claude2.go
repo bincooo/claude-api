@@ -6,13 +6,11 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"github.com/bincooo/claude-api/internal/util"
 	"github.com/bincooo/claude-api/types"
 	"github.com/bincooo/requests"
 	"github.com/bincooo/requests/models"
 	"github.com/bincooo/requests/url"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strings"
@@ -61,14 +59,14 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attr *types.Atta
 		wc.Retry = 1
 	}
 
-	if wc.Headers["cookie"] == "sessionKey=auto" {
-		token, err := util.Login(wc.Agency)
-		if err != nil {
-			return nil, err
-		}
-		wc.Headers["cookie"] = "sessionKey=" + token
-		logrus.Info("自动生成sessionKey: " + token)
-	}
+	//if wc.Headers["cookie"] == "sessionKey=auto" {
+	//	token, err := util.Login(wc.Agency)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	wc.Headers["cookie"] = "sessionKey=" + token
+	//	logrus.Info("自动生成sessionKey: " + token)
+	//}
 
 	if wc.organizationId == "" {
 		if err := wc.getOrganization(); err != nil {

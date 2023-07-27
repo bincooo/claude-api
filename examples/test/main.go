@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/bincooo/claude-api/internal/util"
+	"github.com/bincooo/claude-api/util"
 )
 
 func main() {
