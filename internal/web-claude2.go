@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/bincooo/claude-api/internal/util"
 	"github.com/bincooo/claude-api/types"
 	"github.com/bincooo/requests"
 	"github.com/bincooo/requests/models"
@@ -57,6 +58,14 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attr *types.Atta
 	wc.mu.Lock()
 	if wc.Retry <= 0 {
 		wc.Retry = 1
+	}
+
+	if wc.Headers["Authorization"] == "Bearer auto" {
+		token, err := util.Login(wc.Agency)
+		if err != nil {
+			return nil, err
+		}
+		wc.Headers["Authorization"] = "Bearer " + token
 	}
 
 	if wc.organizationId == "" {
