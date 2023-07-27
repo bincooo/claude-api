@@ -6,7 +6,6 @@ require (
 	github.com/bincooo/requests v0.0.0-20230720064210-7eae5d6c9d1e
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.5.1
-	github.com/sirupsen/logrus v1.9.3
 )
 
 require (
