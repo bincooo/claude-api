@@ -12,6 +12,7 @@ import (
 	"github.com/bincooo/requests/models"
 	"github.com/bincooo/requests/url"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strings"
@@ -66,6 +67,7 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attr *types.Atta
 			return nil, err
 		}
 		wc.Headers["cookie"] = "sessionKey=" + token
+		logrus.Info("自动生成sessionKey: " + token)
 	}
 
 	if wc.organizationId == "" {
