@@ -60,12 +60,12 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attr *types.Atta
 		wc.Retry = 1
 	}
 
-	if wc.Headers["Authorization"] == "Bearer auto" {
+	if wc.Headers["cookie"] == "sessionKey=auto" {
 		token, err := util.Login(wc.Agency)
 		if err != nil {
 			return nil, err
 		}
-		wc.Headers["Authorization"] = "Bearer " + token
+		wc.Headers["cookie"] = "sessionKey=" + token
 	}
 
 	if wc.organizationId == "" {
