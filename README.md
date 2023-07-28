@@ -45,11 +45,21 @@ let
 
 ### New 🎉🎉🎉
 
+（2023-07-28）提供自动刷取token凭证
+`RECAPTCHA_KEY` 、`RECAPTCHA_TOKEN` 的值在claude.ai的登陆页面随意填写邮箱，点击发送后在开发者工具中的`https://claude.ai/api/auth/send_code` 请求中获取
+
+    1. 是否有过期时间未知？？？？
+    2. 是否与IP绑定未知？？？？
+（实验性功能）请自行测试研究...
+
++++++++++++<br>
 添加了web新出的claude-2 🎉
 
 食用方法，在浏览器内登陆，打开开发者工具（F12），复制Cookie中的sessionKey即可。
 
 sessionKey便是程序中的token，appid就不需要了，具体使用参考示例：examples/claude-2/main.go
+
+
 
 ### 授权以及获取user-token
 
