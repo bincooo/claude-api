@@ -6,6 +6,7 @@ import (
 	"github.com/bincooo/claude-api"
 	"github.com/bincooo/claude-api/types"
 	"github.com/bincooo/claude-api/vars"
+	"github.com/bincooo/claude-api/util"
 	"time"
 )
 
@@ -30,6 +31,11 @@ func main() {
 	const (
 		token = "sk-ant-xxx"
 	)
+	tk, err := util.Login("http://127.0.0.1:7890")
+	if err != nil {
+		panic(err)
+	}
+	token = tk
 	options := claude.NewDefaultOptions(token, "", vars.Model4WebClaude2)
 	options.Agency = "http://127.0.0.1:7890"
 	chat, err := claude.New(options)
