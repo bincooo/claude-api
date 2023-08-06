@@ -1,4 +1,4 @@
-### ClaudeAI for Node.js/GoLang
+### ClaudeAI for [Node.js](./README_node.md)/GoLang
 
 Slack Conversation Library for ClaudeAI.
 
@@ -6,39 +6,116 @@ Web Conversation Library for ClaudeAI.  [link](https://claude.ai/chat)
 
 ### Usage
 ```bash
-npm install claude-api
-// or
-yarn install claude-api
+go get github.com/bincooo/claude-api@0e5efef2734ca99c230f76fda09bab096e7020d6
 ```
 
-```js
-import Authenticator, { type ChatResponse } from 'claude-api'
-// ==========
-let
-    // user-token
-    token = 'xoxp-xxxxx',
-    // claude appid
-    bot = 'U0xxxx',
-    text = '讲个故事'
+使用slack for claude
+```go
+const (
+		token = "xoxp-xxx"
+		botId = "U05382WAQ1M"
+)
+options := claude.NewDefaultOptions(token, botId, vars.Model4Slack)
+chat, err := claude.New(options)
+if err != nil {
+		panic(err)
+}
 
-  const authenticator = new Authenticator(token, bot)
-  // 创建一个频道，已存在则直接返回频道ID
-  const channel = await authenticator.newChannel('chat-7890')
-  let result: ChatResponse = await authenticator.sendMessage({
-    text, channel, onMessage: (originalMessage: ChatResponse) => {
-      // console.log(originalMessage)
-    }
-  })
-  console.log('==============1\n', result)
+// 如果不手建频道，默认使用chat-9527
+if err := chat.NewChannel("chat-7890"); err != nil {
+		panic(err)
+}
 
-  text = '接着讲，接下来进入修仙情节'
-  result = await authenticator.sendMessage({
-    text, channel,
-    conversationId: result.conversationId,
-    onMessage: (originalMessage: ChatResponse) => {
-      // console.log(originalMessage)
-    }
-  })
+prompt := "hi"
+fmt.Println("You: ", prompt)
+// 不支持附件
+partialResponse, err := chat.Reply(context.Background(), prompt, nil)
+if err != nil {
+		panic(err)
+}
+Println(partialResponse)
+
+// ======
+
+func Println(partialResponse chan types.PartialResponse) {
+	for {
+		message, ok := <-partialResponse
+		if !ok {
+			return
+		}
+
+		if message.Error != nil {
+			panic(message.Error)
+		}
+
+		fmt.Println(message.Text)
+		fmt.Println("===============")
+	}
+}
+```
+
+使用web for claude
+
+```go
+const (
+		token = "sk-ant-xxx"
+  	attrCtx = "==附件内容=="
+)
+
+// 可自动获取token，无需手动注册
+tk, err := util.Login("http://127.0.0.1:7890")
+if err != nil {
+		panic(err)
+}
+token = tk
+options := claude.NewDefaultOptions(token, "", vars.Model4WebClaude2)
+options.Agency = "http://127.0.0.1:7890"
+chat, err := claude.New(options)
+if err != nil {
+		panic(err)
+}
+
+prompt := "who are you?"
+fmt.Println("You: ", prompt)
+// 正常对话
+partialResponse, err = chat.Reply(context.Background(), prompt, nil)
+if err != nil {
+		panic(err)
+}
+Println(partialResponse)
+// 附件上传
+prompt = "总结附件内容："
+fmt.Println("You: ", prompt)
+ctx, cancel := context.WithTimeout(context.TODO(), time.Second*20)
+defer cancel()
+partialResponse, err = chat.Reply(ctx, prompt, &types.Attachment{
+		Content:  attrCtx,
+		FileName: "paste.txt",
+		FileSize: 999999,
+		FileType: "txt",
+})
+if err != nil {
+		panic(err)
+}
+Println(partialResponse)
+
+// =========
+
+func Println(partialResponse chan types.PartialResponse) {
+	for {
+		message, ok := <-partialResponse
+		if !ok {
+			return
+		}
+
+		if message.Error != nil {
+			panic(message.Error)
+		}
+
+		fmt.Println(message.Text)
+		fmt.Println("===============")
+	}
+}
 ```
 
 
