@@ -6,6 +6,7 @@ import (
 	"github.com/bincooo/requests/models"
 	"github.com/bincooo/requests/url"
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"regexp"
@@ -23,6 +24,8 @@ const (
 	WebClaude2BU = "https://claude.ai/"
 	JA3          = "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-13-18-51-45-43-27-17513-21,29-23-24,0"
 	UA           = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.79"
+	InnerRk      = "6LcdsFgmAAAAAMfrnC1hEdmeRQRXCjpy8qT_kvfy"
+	InnerRt      = "03AAYGu2Ru5V3hpGin5CiSBezXZ5xIKLHhaU7tJ7n2JIbqwnt9WIFoI9PEB4UHEfdHDXsGmfv7H1dRn8jzguQp8KJgLfMrz6jK2pKwt0G8SApU9zJ-LOul39kseZwtONBr-N1EkFQsF7NrPrQUiFtdrJ1g0ZvDZKbhlo6iQCbu2laB8ieumQP3h-PxCbREOt2dzw7NJFKrjW8R8sNJdi6tuKMN7q89ant-llQgA4ZuvzU8Qkf52nkLqMkdpfNpE1n7pkXng8EDovH2i1pXCx-BwkAR-3ihiPqK-6npFA0L3VuzM1MPMlhuDJloLSDj6o8QZXqeOOIGrW-OHoXbDtG7hzUd8rN_m3eeslu0Eis9jZWZi41Y-9-gU6KPOEuy8SGA_HmccK5ziEYJXqcA5KwsoKJ50ydblTfm259S614m4Bn1OmlTucFYOK9Kk5Km1-TO6OGLy9ZEqFSeR2tiKWaObxvcE56HV-qNONc2bIfBdjAtFgFOfbqicSfiwY7FjZO11VYSXytMDPxGLSRQ9vqNW19pVN8ew3khdajb8XeCsuuKGxdRPzBpyd0VnZ54736EweKfT83fzCDMc_bcsTQVVSUAp6XIhQWRHpZbzV-OoNNIJO5mWh6xH8Vq-Pc9r2kHBcikgVavaW5Oawxo99HAsTdbOM4G2pDxRaOhySJyoTT5yOlxz9fxIiVxH76BMBc1ImRRSDvJzm7oMWpmk1twg0xzVdw4W1aq7i0ErI_Cd_vd4mcfpZodbSP9NJUskdBw_YH0d1Bqe_ApzhqUJU9TiJE7GMU1_gqJGaxQRdL1SwDaJZ-yoL3xe8B47NX2GnBdBT68LXl7zmkZETsagtusTwQVCNiimvUnVhqSdpSIu-3CXOlCPIPMIJyKUvYj7RRRmNFTlV62MZghyirmOomTHEs9h_nVkb0Tcm_JU9F0iBXju3OidZXEwXKRxuXR2M13qlEuSHRxM0jl6V-wuCIb2ImunOpQZ7DPQkjO9Pxkpcxs0YnGhbIW_EteU8tLYo8xCznonDk4wFhs6SafzQT3ApMLnMxOcZyKcxAUj3Zj-6Bwq03RmzImTOackPYR3TWcANNXfdEIWgNvT-SKV4e04d1HjgCF3YRXCupT83QTQOjhYUUsEhD-oA_W42VIEWI51SzqKKAujwZ1hlIZjZi5QPppCVYjpBLPuFjhmxiRpJ8irdq4XQN7Y4CDMr_6A8GX7epLxUR0z9x8DaTQVE3NdKL7MfVin-CdJyt2EiGJz9QroExEm7ohjd4LNzLleHd_1s6FmwZLWl8ucSFx_SZwF9_49zT5v_tzXM5EAZRHXIuCIrMmsM4ShmS0_dPn6VYTe7A2L7EfCmKbcK5wNdc2xQaYPnXNnt5e7Lb6UCf6B0IwVUt20CTkII5wUHafxomGUtQYyvEWQZmt6cA_mhxcI2Fl6e7Rdv3HkN1blEnEnOw_nX2iwsuRJI9Kmia1JTOEtoQrWpdhM5Ogh6PtcMcQtUGLwDPl0av-gL7IfQkkFTwzfJlMwC1B2ogNsxo_q83w8jT4hLbusYBgPOGKQbsuPY_quZW-sCOS_BFt8W5xtS5wZbWtuzTyS8Dca7uSsW6_Y6Ak2VehP5ZlIwsh6Ic1D_L17aBQVi6HWBIPvI8_o8L1_vc_tgcxv9O5HKX3hS5bxCLzlXxVlcxleBUhrdDphKfSErVI0hEEp4eh1RAksSWQKQvfFn68WLGuqn4AYUjW9KPrBxDlN7sl14NFeq8x7QfbnNVrXmmN4g"
 )
 
 type Kv = map[string]string
@@ -44,7 +47,10 @@ func loadEnvVar(key, defaultValue string) string {
 func Login(proxy string) (string, error) {
 	// validate
 	if rk == "" || rt == "" {
-		return "", errors.New("请在同级目录下的 .env 文件内配置 RECAPTCHA_KEY、RECAPTCHA_TOKEN 变量")
+		logrus.Warning("你没有提供`RECAPTCHA_KEY`、`RECAPTCHA_TOKEN`，使用内置参数；如若无法生成请在同级目录下的 .env 文件内配置 RECAPTCHA_KEY、RECAPTCHA_TOKEN 变量")
+		// return "", errors.New("请在同级目录下的 .env 文件内配置 RECAPTCHA_KEY、RECAPTCHA_TOKEN 变量")
+		rk = InnerRk
+		rt = InnerRt
 	}
 
 	email, session, err := partOne()
