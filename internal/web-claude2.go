@@ -53,7 +53,7 @@ func (wc *WebClaude2) NewChannel(string) error {
 	return nil
 }
 
-func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attr *types.Attachment) (chan types.PartialResponse, error) {
+func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.Attachment) (chan types.PartialResponse, error) {
 	wc.mu.Lock()
 	if wc.Retry <= 0 {
 		wc.Retry = 1
@@ -84,7 +84,7 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attr *types.Atta
 
 	var response *models.Response
 	for index := 1; index <= wc.Retry; index++ {
-		r, err := wc.PostMessage(5*time.Minute, prompt, attr)
+		r, err := wc.PostMessage(5*time.Minute, prompt, attrs)
 		if err != nil {
 			if index >= wc.Retry {
 				wc.mu.Unlock()
@@ -230,7 +230,7 @@ func (wc *WebClaude2) createConversation() error {
 	return errors.New("failed to fetch the `conversation-id`")
 }
 
-func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attr *types.Attachment) (*models.Response, error) {
+func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attrs []types.Attachment) (*models.Response, error) {
 	if wc.organizationId == "" {
 		return nil, errors.New("there is no corresponding `organization-id`")
 	}
@@ -239,15 +239,8 @@ func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attr *ty
 	}
 
 	params := make(map[string]any)
-	if attr != nil {
-		params["attachments"] = []any{
-			map[string]any{
-				"extracted_content": attr.Content,
-				"file_size":         attr.FileSize,
-				"file_name":         attr.FileName,
-				"file_type":         attr.FileType,
-			},
-		}
+	if len(attrs) > 0 {
+		params["attachments"] = attrs
 	} else {
 		params["attachments"] = []any{}
 	}
