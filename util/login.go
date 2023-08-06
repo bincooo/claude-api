@@ -42,6 +42,11 @@ func loadEnvVar(key, defaultValue string) string {
 }
 
 func Login(proxy string) (string, error) {
+	// validate
+	if rk == "" || rt == "" {
+		return "", errors.New("请在同级目录下的 .env 文件内配置 RECAPTCHA_KEY、RECAPTCHA_TOKEN 变量")
+	}
+
 	email, session, err := partOne()
 	if err != nil {
 		return "", err
