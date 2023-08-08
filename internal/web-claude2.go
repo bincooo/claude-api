@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/bincooo/claude-api/types"
 	"github.com/bincooo/requests"
 	"github.com/bincooo/requests/models"
@@ -187,6 +188,7 @@ func (wc *WebClaude2) getOrganization() error {
 	if e != nil {
 		return e
 	}
+
 	result := make([]map[string]any, 0)
 	if e = json.Unmarshal(marshal, &result); e != nil {
 		return e
@@ -259,7 +261,7 @@ func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attrs []
 	return wc.newRequest(timeout, http.MethodPost, "append_message", headers, params)
 }
 
-func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route string, headers map[string]string, params map[string]any) (*models.Response, error) {
+func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route string, headers map[string]string, params map[string]any) (response *models.Response, err error) {
 	if method == http.MethodGet {
 		var search []string
 		for key, value := range params {
@@ -298,10 +300,30 @@ func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route str
 	req.Ja3 = JA3
 	switch method {
 	case http.MethodGet:
-		return requests.Get(WebClaude2BU+"/"+route, req)
+		response, err = requests.Get(WebClaude2BU+"/"+route, req)
 	default:
-		return requests.RequestStream(http.MethodPost, WebClaude2BU+"/"+route, req)
+		response, err = requests.RequestStream(http.MethodPost, WebClaude2BU+"/"+route, req)
 	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode >= 400 {
+		data, err := io.ReadAll(response.Body)
+		defer response.Body.Close()
+		if err != nil {
+			return nil, err
+		}
+		c2err := &types.Claude2Error{}
+		err = json.Unmarshal(data, c2err)
+		if err != nil {
+			return nil, fmt.Errorf("%d: %s", response.StatusCode, data)
+		}
+		return nil, c2err
+	}
+
+	return response, nil
 }
 
 // ====
