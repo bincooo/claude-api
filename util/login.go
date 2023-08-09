@@ -21,7 +21,7 @@ var (
 )
 
 const (
-	WebClaude2BU = "https://claude.ai/"
+	WebClaude2BU = "https://claude.ai/api"
 	JA3          = "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-13-18-51-45-43-27-17513-21,29-23-24,0"
 	UA           = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.79"
 	InnerRk      = "6LcdsFgmAAAAAMfrnC1hEdmeRQRXCjpy8qT_kvfy"

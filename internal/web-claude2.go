@@ -304,11 +304,15 @@ func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route str
 		bu = wc.BaseURL
 	}
 
+	if !strings.HasSuffix(bu, "/") {
+		bu += "/"
+	}
+
 	switch method {
 	case http.MethodGet:
-		response, err = requests.Get(bu+"/"+route, req)
+		response, err = requests.Get(bu+route, req)
 	default:
-		response, err = requests.RequestStream(http.MethodPost, bu+"/"+route, req)
+		response, err = requests.RequestStream(http.MethodPost, bu+route, req)
 	}
 
 	if err != nil {
