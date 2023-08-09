@@ -45,6 +45,10 @@ func loadEnvVar(key, defaultValue string) string {
 }
 
 func Login(proxy string) (string, error) {
+	return LoginFor("", proxy)
+}
+
+func LoginFor(baseURL, proxy string) (string, error) {
 	// validate
 	if rk == "" || rt == "" {
 		logrus.Warning("你没有提供`RECAPTCHA_KEY`、`RECAPTCHA_TOKEN`，使用内置参数；如若无法生成请在同级目录下的 .env 文件内配置 RECAPTCHA_KEY、RECAPTCHA_TOKEN 变量")
@@ -53,11 +57,19 @@ func Login(proxy string) (string, error) {
 		rt = InnerRt
 	}
 
+	if baseURL == "" {
+		baseURL = WebClaude2BU
+	}
+
+	if !strings.HasSuffix(baseURL, "/") {
+		baseURL += "/"
+	}
+
 	email, session, err := partOne()
 	if err != nil {
 		return "", err
 	}
-	return partTwo(proxy, email, session)
+	return partTwo(baseURL, proxy, email, session)
 }
 
 // create email
@@ -78,8 +90,8 @@ func partOne() (string, *requests.Session, error) {
 }
 
 // send_code
-func partTwo(proxy string, email string, session *requests.Session) (string, error) {
-	response, _, err := newRequest(15*time.Second, proxy, http.MethodPost, WebClaude2BU+"api/auth/send_code", map[string]any{
+func partTwo(baseURL, proxy string, email string, session *requests.Session) (string, error) {
+	response, _, err := newRequest(15*time.Second, proxy, http.MethodPost, baseURL+"api/auth/send_code", map[string]any{
 		"email_address":      email,
 		"recaptcha_site_key": rk,
 		"recaptcha_token":    rt,
@@ -101,12 +113,12 @@ func partTwo(proxy string, email string, session *requests.Session) (string, err
 		return "", err
 	}
 
-	return partFour(code, email, proxy)
+	return partFour(baseURL, code, email, proxy)
 }
 
 // 注册成功，返回token
-func partFour(code string, email string, proxy string) (string, error) {
-	response, _, err := newRequest(15*time.Second, proxy, http.MethodPost, WebClaude2BU+"api/auth/verify_code", map[string]any{
+func partFour(baseURL, code string, email string, proxy string) (string, error) {
+	response, _, err := newRequest(15*time.Second, proxy, http.MethodPost, baseURL+"api/auth/verify_code", map[string]any{
 		"code":               code,
 		"email_address":      email,
 		"recaptcha_site_key": rk,

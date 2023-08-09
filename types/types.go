@@ -22,6 +22,7 @@ type Options struct {
 	BotId   string            // slack里的claude-id
 	Model   string            // 提供两个模型：slack 、 web-claude-2
 	Agency  string            // 本地代理
+	BaseURL string            // 可代理转发
 }
 
 type PartialResponse struct {

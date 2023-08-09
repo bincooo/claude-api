@@ -298,11 +298,17 @@ func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route str
 
 	req.Headers = uHeaders
 	req.Ja3 = JA3
+
+	bu := WebClaude2BU
+	if wc.BaseURL != "" {
+		bu = wc.BaseURL
+	}
+
 	switch method {
 	case http.MethodGet:
-		response, err = requests.Get(WebClaude2BU+"/"+route, req)
+		response, err = requests.Get(bu+"/"+route, req)
 	default:
-		response, err = requests.RequestStream(http.MethodPost, WebClaude2BU+"/"+route, req)
+		response, err = requests.RequestStream(http.MethodPost, bu+"/"+route, req)
 	}
 
 	if err != nil {
