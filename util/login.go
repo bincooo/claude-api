@@ -78,11 +78,28 @@ func LoginFor(baseURL, proxy string) (string, error) {
 		baseURL += "/"
 	}
 
-	email, session, err := partOne()
-	if err != nil {
-		return "", err
+	retry := 3
+	var err error
+	for {
+		retry--
+		if retry < 0 {
+			if err != nil {
+				return "", err
+			}
+			return "", errors.New("获取SessionKey失败")
+		}
+		email, session, e := partOne()
+		if e != nil {
+			err = e
+			continue
+		}
+		token, e := partTwo(baseURL, proxy, email, session)
+		if e != nil {
+			err = e
+			continue
+		}
+		return token, e
 	}
-	return partTwo(baseURL, proxy, email, session)
 }
 
 // create email
@@ -174,6 +191,10 @@ func partThree(email string, session *requests.Session) (string, error) {
 			session)
 		if err != nil {
 			return "", err
+		}
+
+		if response.StatusCode != 200 {
+			return "", errors.New("[FetchError]: " + response.Text)
 		}
 
 		json, err := response.Json()
