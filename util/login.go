@@ -58,10 +58,10 @@ func loadEnvVar(key, defaultValue string) string {
 }
 
 func Login(proxy string) (string, error) {
-	return LoginFor("", proxy)
+	return LoginFor("", "", proxy)
 }
 
-func LoginFor(baseURL, proxy string) (string, error) {
+func LoginFor(baseURL, suffix, proxy string) (string, error) {
 	// validate
 	if rk == "" || rt == "" {
 		logrus.Warning("你没有提供`RECAPTCHA_KEY`、`RECAPTCHA_TOKEN`，使用内置参数；如若无法生成请在同级目录下的 .env 文件内配置 RECAPTCHA_KEY、RECAPTCHA_TOKEN 变量")
@@ -88,7 +88,7 @@ func LoginFor(baseURL, proxy string) (string, error) {
 			}
 			return "", errors.New("获取SessionKey失败")
 		}
-		email, session, e := partOne()
+		email, session, e := partOne(suffix)
 		if e != nil {
 			err = e
 			continue
@@ -103,7 +103,7 @@ func LoginFor(baseURL, proxy string) (string, error) {
 }
 
 // create email
-func partOne() (string, *requests.Session, error) {
+func partOne(suffix string) (string, *requests.Session, error) {
 	response, session, err := newRequest(15*time.Second, "", http.MethodGet, "https://www.guerrillamail.com/inbox", nil, nil)
 	if err != nil {
 		return "", nil, err
@@ -117,7 +117,11 @@ func partOne() (string, *requests.Session, error) {
 		return "", nil, errors.New("create_email error")
 	}
 
-	email := strings.Replace(matchSlice[0][7:], "@sharklasers.com", "@"+EmailSuffix[rand.Intn(len(EmailSuffix))], -1)
+	if suffix == "" {
+		suffix = EmailSuffix[rand.Intn(len(EmailSuffix))]
+	}
+
+	email := strings.Replace(matchSlice[0][7:], "@sharklasers.com", "@"+suffix, -1)
 	return email, session, nil
 }
 
