@@ -20,7 +20,7 @@ var (
 	rk = ""
 	rt = ""
 
-	emailSubs = []string{
+	EmailSuffix = []string{
 		"guerrillamail.biz",
 		"guerrillamail.de",
 		"guerrillamail.net",
@@ -117,7 +117,7 @@ func partOne() (string, *requests.Session, error) {
 		return "", nil, errors.New("create_email error")
 	}
 
-	email := strings.Replace(matchSlice[0][7:], "@sharklasers.com", "@"+emailSubs[rand.Intn(len(emailSubs))], -1)
+	email := strings.Replace(matchSlice[0][7:], "@sharklasers.com", "@"+EmailSuffix[rand.Intn(len(EmailSuffix))], -1)
 	return email, session, nil
 }
 
