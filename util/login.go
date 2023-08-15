@@ -1,6 +1,7 @@
 package util
 
 import (
+	"encoding/json"
 	"errors"
 	"github.com/bincooo/requests"
 	"github.com/bincooo/requests/models"
@@ -10,7 +11,6 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -20,16 +20,29 @@ var (
 	rk = ""
 	rt = ""
 
-	EmailSuffix = []string{
-		"guerrillamail.biz",
-		"guerrillamail.de",
-		"guerrillamail.net",
-		"guerrillamail.org",
-		"guerrillamail.info",
-		"guerrillamailblock.com",
-		"pokemail.net",
-		"spam4.me",
-		"grr.la",
+	//EmailSuffix = []string{
+	//	"guerrillamail.biz",
+	//	"guerrillamail.de",
+	//	"guerrillamail.net",
+	//	"guerrillamail.org",
+	//	"guerrillamail.info",
+	//	"guerrillamailblock.com",
+	//	"pokemail.net",
+	//	"spam4.me",
+	//	"grr.la",
+	//}
+	ED = []byte{104, 116, 116, 112, 115, 58, 47, 47, 119, 119, 119, 46, 108, 105, 110, 115, 104, 105, 121, 111, 117, 120, 105, 97, 110, 103, 46, 110, 101, 116, 47}
+	ES = [][]byte{
+		{108, 105, 110, 115, 104, 105, 121, 111, 117, 120, 105, 97, 110, 103, 46, 110, 101, 116},
+		{101, 117, 114, 45, 114, 97, 116, 101, 46, 99, 111, 109},
+		{100, 101, 101, 112, 121, 105, 110, 99, 46, 99, 111, 109},
+		{98, 101, 115, 116, 116, 101, 109, 112, 109, 97, 105, 108, 46, 99, 111, 109},
+		{53, 108, 101, 116, 116, 101, 114, 119, 111, 114, 100, 115, 102, 105, 110, 100, 101, 114, 46, 99, 111, 109},
+		{99, 101, 108, 101, 98, 114, 105, 116, 121, 100, 101, 116, 97, 105, 108, 101, 100, 46, 99, 111, 109},
+		{99, 111, 109, 112, 97, 114, 105, 115, 105, 111, 110, 115, 46, 110, 101, 116},
+		{114, 97, 110, 100, 111, 109, 112, 105, 99, 107, 101, 114, 115, 46, 99, 111, 109},
+		{98, 101, 115, 116, 119, 104, 101, 101, 108, 115, 112, 105, 110, 110, 101, 114, 46, 99, 111, 109},
+		{106, 117, 115, 116, 100, 101, 102, 105, 110, 105, 116, 105, 111, 110, 46, 99, 111, 109},
 	}
 )
 
@@ -88,7 +101,7 @@ func LoginFor(baseURL, suffix, proxy string) (string, error) {
 			}
 			return "", errors.New("获取SessionKey失败")
 		}
-		email, session, e := partOne(suffix)
+		email, session, e := partOne(suffix, proxy)
 		if e != nil {
 			err = e
 			continue
@@ -103,27 +116,47 @@ func LoginFor(baseURL, suffix, proxy string) (string, error) {
 }
 
 // create email
-func partOne(suffix string) (string, *requests.Session, error) {
-	response, session, err := newRequest(15*time.Second, "", http.MethodGet, "https://www.guerrillamail.com/inbox", nil, nil)
+func partOne(suffix, proxy string) (string, *requests.Session, error) {
+	response, session, err := newRequest(15*time.Second, proxy, http.MethodGet, string(ED)+"api/v1/mailbox/keepalive", nil, nil)
 	if err != nil {
 		return "", nil, err
 	}
 	if response.StatusCode != 200 {
 		return "", nil, errors.New("create_email Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
 	}
-	compileRegex := regexp.MustCompile(`Email:\s\S+@sharklasers.com`)
-	matchSlice := compileRegex.FindStringSubmatch(response.Text)
-	if len(matchSlice) == 0 {
-		return "", nil, errors.New("create_email error")
+	json, err := response.Json()
+	if err != nil {
+		return "", nil, err
 	}
 
 	if suffix == "" {
-		suffix = EmailSuffix[rand.Intn(len(EmailSuffix))]
+		suffix = string(ES[rand.Intn(len(ES))])
 	}
-
-	email := strings.Replace(matchSlice[0][7:], "@sharklasers.com", "@"+suffix, -1)
+	email := json["mailbox"].(string) + "@" + suffix
 	return email, session, nil
 }
+
+//func partOne(suffix string) (string, *requests.Session, error) {
+//	response, session, err := newRequest(15*time.Second, "", http.MethodGet, "https://www.guerrillamail.com/inbox", nil, nil)
+//	if err != nil {
+//		return "", nil, err
+//	}
+//	if response.StatusCode != 200 {
+//		return "", nil, errors.New("create_email Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
+//	}
+//	compileRegex := regexp.MustCompile(`Email:\s\S+@sharklasers.com`)
+//	matchSlice := compileRegex.FindStringSubmatch(response.Text)
+//	if len(matchSlice) == 0 {
+//		return "", nil, errors.New("create_email error")
+//	}
+//
+//	if suffix == "" {
+//		suffix = EmailSuffix[rand.Intn(len(EmailSuffix))]
+//	}
+//
+//	email := strings.Replace(matchSlice[0][7:], "@sharklasers.com", "@"+suffix, -1)
+//	return email, session, nil
+//}
 
 // send_code
 func partTwo(baseURL, proxy string, email string, session *requests.Session) (string, error) {
@@ -144,7 +177,7 @@ func partTwo(baseURL, proxy string, email string, session *requests.Session) (st
 		return "", errors.New("send_code Error: " + response.Text)
 	}
 
-	code, err := partThree(email, session)
+	code, err := partThree(email, proxy, session)
 	if err != nil {
 		return "", err
 	}
@@ -180,7 +213,8 @@ func partFour(baseURL, code string, email string, proxy string) (string, error) 
 	return slice[0][11:], nil
 }
 
-func partThree(email string, session *requests.Session) (string, error) {
+// 接收验证码
+func partThree(email, proxy string, session *requests.Session) (string, error) {
 	slice := strings.Split(email, "@")
 	cnt := 10
 	for {
@@ -188,9 +222,9 @@ func partThree(email string, session *requests.Session) (string, error) {
 		if cnt < 0 {
 			return "", errors.New("接收邮件失败")
 		}
-		response, _, err := newRequest(15*time.Second, "",
+		response, _, err := newRequest(15*time.Second, proxy,
 			http.MethodGet,
-			"https://www.guerrillamail.com/ajax.php?f=get_email_list&offset=0&site="+slice[1]+"&in="+slice[0],
+			string(ED)+"api/v1/mailbox/"+slice[0],
 			nil,
 			session)
 		if err != nil {
@@ -201,21 +235,58 @@ func partThree(email string, session *requests.Session) (string, error) {
 			return "", errors.New("[FetchError]: " + response.Text)
 		}
 
-		json, err := response.Json()
-		if err != nil {
+		var emailSlice []map[string]any
+		if err = json.Unmarshal([]byte(response.Text), &emailSlice); err != nil {
 			return "", err
 		}
 
-		if emailSlice, ok := json["list"].([]any); ok && len(emailSlice) > 1 {
-			subject := emailSlice[0].(map[string]any)
-			if subject["mail_from"] == "support@mail.anthropic.com" {
-				split := strings.Split(subject["mail_subject"].(string), " ")
+		if len(emailSlice) > 0 {
+			subject := emailSlice[0]
+			if subject["from"] == "Anthropic" {
+				split := strings.Split(subject["subject"].(string), " ")
 				return split[len(split)-1], nil
 			}
 		}
 		time.Sleep(3 * time.Second)
 	}
 }
+
+//func partThree(email string, session *requests.Session) (string, error) {
+//	slice := strings.Split(email, "@")
+//	cnt := 10
+//	for {
+//		cnt--
+//		if cnt < 0 {
+//			return "", errors.New("接收邮件失败")
+//		}
+//		response, _, err := newRequest(15*time.Second, "",
+//			http.MethodGet,
+//			"https://www.guerrillamail.com/ajax.php?f=get_email_list&offset=0&site=guerrillamail.com&in="+slice[0],
+//			nil,
+//			session)
+//		if err != nil {
+//			return "", err
+//		}
+//
+//		if response.StatusCode != 200 {
+//			return "", errors.New("[FetchError]: " + response.Text)
+//		}
+//
+//		json, err := response.Json()
+//		if err != nil {
+//			return "", err
+//		}
+//
+//		if emailSlice, ok := json["list"].([]any); ok && len(emailSlice) > 1 {
+//			subject := emailSlice[0].(map[string]any)
+//			if subject["mail_from"] == "support@mail.anthropic.com" {
+//				split := strings.Split(subject["mail_subject"].(string), " ")
+//				return split[len(split)-1], nil
+//			}
+//		}
+//		time.Sleep(3 * time.Second)
+//	}
+//}
 
 func newRequest(timeout time.Duration, proxy string, method string, route string, params map[string]any, session *requests.Session) (*models.Response, *requests.Session, error) {
 	if method == http.MethodGet {
@@ -243,8 +314,14 @@ func newRequest(timeout time.Duration, proxy string, method string, route string
 		req.Proxies = proxy
 	}
 
+	parse, err := url.Parse(route)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	uHeaders := url.NewHeaders()
 	uHeaders.Set("User-Agent", UA)
+	uHeaders.Set("referer", parse.Scheme+"://"+parse.Host+"/")
 	req.Headers = uHeaders
 
 	req.Ja3 = JA3
