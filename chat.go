@@ -6,6 +6,7 @@ import (
 	"github.com/bincooo/claude-api/internal"
 	"github.com/bincooo/claude-api/types"
 	"github.com/bincooo/claude-api/vars"
+	"strings"
 )
 
 func NewDefaultOptions(token string, botId string, model string) types.Options {
@@ -26,15 +27,11 @@ func NewDefaultOptions(token string, botId string, model string) types.Options {
 			"Authorization": "Bearer " + token,
 		}
 	case vars.Model4WebClaude2:
+		if token != "" && !strings.Contains(token, "sessionKey=") {
+			token = "sessionKey=" + token
+		}
 		options.Headers = map[string]string{
-			"cookie": "sessionKey=" + token,
-			//"authority":       "claude.ai",
-			//"accept":          "text/event-stream",
-			//"accept-language": "en,zh-CN;q=0.9,zh;q=0.8,en-GB;q=0.7,en-US;q=0.6",
-			//"cache-control":   "no-cache",
-			//"content-type":    "application/json",
-			//"origin":          "https://claude.ai",
-			//"user-agent":      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+			"cookie": token,
 		}
 	}
 
