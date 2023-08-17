@@ -20,17 +20,6 @@ var (
 	rk = ""
 	rt = ""
 
-	//EmailSuffix = []string{
-	//	"guerrillamail.biz",
-	//	"guerrillamail.de",
-	//	"guerrillamail.net",
-	//	"guerrillamail.org",
-	//	"guerrillamail.info",
-	//	"guerrillamailblock.com",
-	//	"pokemail.net",
-	//	"spam4.me",
-	//	"grr.la",
-	//}
 	ED = []byte{104, 116, 116, 112, 115, 58, 47, 47, 119, 119, 119, 46, 108, 105, 110, 115, 104, 105, 121, 111, 117, 120, 105, 97, 110, 103, 46, 110, 101, 116, 47}
 	ES = [][]byte{
 		{108, 105, 110, 115, 104, 105, 121, 111, 117, 120, 105, 97, 110, 103, 46, 110, 101, 116},
@@ -78,7 +67,6 @@ func LoginFor(baseURL, suffix, proxy string) (string, error) {
 	// validate
 	if rk == "" || rt == "" {
 		logrus.Warning("你没有提供`RECAPTCHA_KEY`、`RECAPTCHA_TOKEN`，使用内置参数；如若无法生成请在同级目录下的 .env 文件内配置 RECAPTCHA_KEY、RECAPTCHA_TOKEN 变量")
-		// return "", errors.New("请在同级目录下的 .env 文件内配置 RECAPTCHA_KEY、RECAPTCHA_TOKEN 变量")
 		rk = InnerRk
 		rt = InnerRt
 	}
@@ -91,7 +79,7 @@ func LoginFor(baseURL, suffix, proxy string) (string, error) {
 		baseURL += "/"
 	}
 
-	retry := 3
+	retry := 2
 	var err error
 	for {
 		retry--
@@ -117,14 +105,14 @@ func LoginFor(baseURL, suffix, proxy string) (string, error) {
 
 // create email
 func partOne(suffix, proxy string) (string, *requests.Session, error) {
-	response, session, err := newRequest(15*time.Second, proxy, http.MethodGet, string(ED)+"api/v1/mailbox/keepalive", nil, nil)
+	response, session, err := newRequest(5*time.Second, proxy, http.MethodGet, string(ED)+"api/v1/mailbox/keepalive", nil, nil)
 	if err != nil {
 		return "", nil, err
 	}
 	if response.StatusCode != 200 {
 		return "", nil, errors.New("create_email Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
 	}
-	json, err := response.Json()
+	obj, err := response.Json()
 	if err != nil {
 		return "", nil, err
 	}
@@ -132,7 +120,7 @@ func partOne(suffix, proxy string) (string, *requests.Session, error) {
 	if suffix == "" {
 		suffix = string(ES[rand.Intn(len(ES))])
 	}
-	email := json["mailbox"].(string) + "@" + suffix
+	email := obj["mailbox"].(string) + "@" + suffix
 	return email, session, nil
 }
 
@@ -160,7 +148,7 @@ func partOne(suffix, proxy string) (string, *requests.Session, error) {
 
 // send_code
 func partTwo(baseURL, proxy string, email string, session *requests.Session) (string, error) {
-	response, _, err := newRequest(15*time.Second, proxy, http.MethodPost, baseURL+"auth/send_code", map[string]any{
+	response, _, err := newRequest(5*time.Second, proxy, http.MethodPost, baseURL+"auth/send_code", map[string]any{
 		"email_address":      email,
 		"recaptcha_site_key": rk,
 		"recaptcha_token":    rt,
@@ -187,7 +175,7 @@ func partTwo(baseURL, proxy string, email string, session *requests.Session) (st
 
 // 注册成功，返回token
 func partFour(baseURL, code string, email string, proxy string) (string, error) {
-	response, _, err := newRequest(15*time.Second, proxy, http.MethodPost, baseURL+"auth/verify_code", map[string]any{
+	response, _, err := newRequest(10*time.Second, proxy, http.MethodPost, baseURL+"auth/verify_code", map[string]any{
 		"code":               code,
 		"email_address":      email,
 		"recaptcha_site_key": rk,
@@ -222,7 +210,7 @@ func partThree(email, proxy string, session *requests.Session) (string, error) {
 		if cnt < 0 {
 			return "", errors.New("接收邮件失败")
 		}
-		response, _, err := newRequest(15*time.Second, proxy,
+		response, _, err := newRequest(10*time.Second, proxy,
 			http.MethodGet,
 			string(ED)+"api/v1/mailbox/"+slice[0],
 			nil,
