@@ -252,7 +252,7 @@ func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attrs []
 	params["completion"] = Kv{
 		"model":    "claude-2",
 		"prompt":   prompt,
-		"timezone": "Asia/Shanghai",
+		"timezone": "America/New_York",
 	}
 
 	headers := make(Kv)
