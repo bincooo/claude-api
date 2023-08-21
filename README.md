@@ -6,6 +6,8 @@ Slack Conversation Library for ClaudeAI.
 
 Web Conversation Library for ClaudeAI.  [link](https://claude.ai/chat)
 
+[Service For SillyTavern](https://github.com/bincooo/MiaoX)
+
 ### Usage
 ```bash
 go get github.com/bincooo/claude-api@[commit]
