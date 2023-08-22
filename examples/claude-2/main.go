@@ -31,11 +31,12 @@ func main() {
 	var (
 		token = "sk-ant-xxx"
 	)
-	tk, err := util.Login("http://127.0.0.1:7890")
+	email, tk, err := util.Login("http://127.0.0.1:7890")
 	if err != nil {
 		panic(err)
 	}
 	token = tk
+	fmt.Println(email)
 	options := claude.NewDefaultOptions(token, "", vars.Model4WebClaude2)
 	options.Agency = "http://127.0.0.1:7890"
 	chat, err := claude.New(options)
