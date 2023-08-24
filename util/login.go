@@ -8,6 +8,7 @@ import (
 	"github.com/bincooo/requests/url"
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	"math/rand"
 	"net/http"
 	"os"
 	"regexp"
@@ -128,6 +129,9 @@ func LoginFor(baseURL, suffix, proxy string) (string, string, error) {
 
 // create email
 func partOne(suffix, proxy string) (string, string, *requests.Session, error) {
+	if suffix == "" {
+		suffix = string(ES[rand.Intn(len(ES))])
+	}
 	response, session, err := newRequest(15*time.Second, proxy, http.MethodGet, string(ED)+"js/chunks/smailpro_v2_email.js", nil, nil)
 	if err != nil {
 		return "", "", nil, err
