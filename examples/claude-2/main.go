@@ -31,7 +31,7 @@ func main() {
 	var (
 		token = "sk-ant-xxx"
 	)
-	email, tk, err := util.Login("http://127.0.0.1:7890")
+	email, tk, err := util.LoginFor("", "gmail.com", "http://127.0.0.1:7890")
 	if err != nil {
 		panic(err)
 	}

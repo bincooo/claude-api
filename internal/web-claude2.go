@@ -60,15 +60,6 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 		wc.Retry = 1
 	}
 
-	//if wc.Headers["cookie"] == "sessionKey=auto" {
-	//	token, err := util.Login(wc.Agency)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	wc.Headers["cookie"] = "sessionKey=" + token
-	//	logrus.Info("自动生成sessionKey: " + token)
-	//}
-
 	if wc.organizationId == "" {
 		if err := wc.getOrganization(); err != nil {
 			wc.mu.Unlock()
@@ -325,6 +316,8 @@ func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route str
 		if err != nil {
 			return nil, err
 		}
+		encoding := response.Headers.Get("Content-Encoding")
+		requests.DecompressBody(&data, encoding)
 		c2err := &types.Claude2Error{}
 		err = json.Unmarshal(data, c2err)
 		if err != nil {
