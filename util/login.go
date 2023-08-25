@@ -168,7 +168,8 @@ func partOne(suffix, proxy string) (string, string, *requests.Session, error) {
 		"server":       "server-1",
 		"type":         "alias",
 	}
-	response, session, err = newRequest(5*time.Second, proxy, http.MethodGet, rapidapiEndpoint+"/email/gm/get", params, session)
+	r := gr(suffix)
+	response, session, err = newRequest(5*time.Second, proxy, http.MethodGet, rapidapiEndpoint+"/email/"+r+"/get", params, session)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -325,16 +326,7 @@ func partThree(endpoint, email, proxy string, session *requests.Session) (string
 		"timestamp":    time.Now().Unix(),
 	}
 
-	r := "hme"
-	if strings.HasSuffix(email, "@"+string(ES[0])) {
-		r = "gm"
-	}
-	if strings.HasSuffix(email, "@"+string(ES[1])) {
-		r = "ot"
-	}
-	if strings.HasSuffix(email, "@"+string(ES[2])) {
-		r = "hme"
-	}
+	r := gr(email)
 
 	cnt := 10
 	for {
@@ -364,11 +356,29 @@ func partThree(endpoint, email, proxy string, session *requests.Session) (string
 			subject := emailSlice[0].(map[string]any)
 			if strings.TrimSpace(subject["textFrom"].(string)) == "Anthropic" {
 				sp := strings.Split(subject["textSubject"].(string), " ")
-				return sp[len(sp)-1], nil
+				code := sp[len(sp)-1]
+				if code == "" {
+					continue
+				}
+				return code, nil
 			}
 		}
 		time.Sleep(3 * time.Second)
 	}
+}
+
+func gr(email string) string {
+	r := "hme"
+	if strings.HasSuffix(email, string(ES[0])) {
+		r = "gm"
+	}
+	if strings.HasSuffix(email, string(ES[1])) {
+		r = "ot"
+	}
+	if strings.HasSuffix(email, string(ES[2])) {
+		r = "hme"
+	}
+	return r
 }
 
 //func partThree(email, proxy string, session *requests.Session) (string, error) {
