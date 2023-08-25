@@ -134,7 +134,10 @@ func partOne(suffix, proxy string) (string, string, *requests.Session, error) {
 	if suffix == "" {
 		suffix = string(ES[rand.Intn(len(ES))])
 	}
-	response, session, err := newRequest(15*time.Second, proxy, http.MethodGet, string(ED)+"js/chunks/smailpro_v2_email.js", nil, nil)
+	params := map[string]any{
+		"id": RandHexString(20),
+	}
+	response, session, err := newRequest(15*time.Second, proxy, http.MethodGet, string(ED)+"js/chunks/smailpro_v2_email.js", params, nil)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -162,7 +165,7 @@ func partOne(suffix, proxy string) (string, string, *requests.Session, error) {
 		return "", "", nil, err
 	}
 
-	params := map[string]any{
+	params = map[string]any{
 		"key":          key,
 		"rapidapi-key": rapidapiKey,
 		"domain":       suffix,
@@ -499,4 +502,13 @@ func newRequest(timeout time.Duration, proxy string, method string, route string
 	}
 	response, err := session.Request(method, route, req, false)
 	return response, session, err
+}
+
+func RandHexString(length int) string {
+	hexStr := "01a23b45c67d89e"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = hexStr[rand.Intn(len(hexStr))]
+	}
+	return string(b)
 }
