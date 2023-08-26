@@ -101,7 +101,7 @@ func LoginFor(baseURL, suffix, proxy string) (string, string, error) {
 		baseURL += "/"
 	}
 
-	retry := 2
+	retry := 3
 	var err error
 	var email string
 
@@ -183,7 +183,7 @@ func partOne(suffix, proxy string) (string, string, *requests.Session, error) {
 	}
 	obj, err := response.Json()
 	if err != nil {
-		return "", "", nil, err
+		return "", "", nil, errors.New("json parsing error")
 	}
 	if obj["code"].(float64) != 200 {
 		return "", "", nil, errors.New(obj["msg"].(string))
