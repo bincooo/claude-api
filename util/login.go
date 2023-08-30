@@ -7,7 +7,6 @@ import (
 	"github.com/bincooo/requests/models"
 	"github.com/bincooo/requests/url"
 	"github.com/joho/godotenv"
-	"github.com/sirupsen/logrus"
 	"math/rand"
 	"net/http"
 	"os"
@@ -20,8 +19,9 @@ import (
 var (
 	JA3 = "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-13-18-51-45-43-27-17513-21,29-23-24,0"
 
-	rk = ""
-	rt = ""
+	rk  = ""
+	rt  = ""
+	rev = ""
 
 	ED = []byte{104, 116, 116, 112, 115, 58, 47, 47, 115, 109, 97, 105, 108, 112, 114, 111, 46, 99, 111, 109, 47}
 	ES = [][]byte{
@@ -71,6 +71,7 @@ func init() {
 	JA3 = LoadEnvVar("JA3", JA3)
 	rk = LoadEnvVar("RECAPTCHA_KEY", "")
 	rt = LoadEnvVar("RECAPTCHA_TOKEN", "")
+	rev = LoadEnvVar("REV", "")
 }
 
 func LoadEnvVar(key, defaultValue string) string {
@@ -87,11 +88,11 @@ func Login(proxy string) (string, string, error) {
 
 func LoginFor(baseURL, suffix, proxy string) (string, string, error) {
 	// validate
-	if rk == "" || rt == "" {
-		logrus.Warning("你没有提供`RECAPTCHA_KEY`、`RECAPTCHA_TOKEN`，使用内置参数；如若无法生成请在同级目录下的 .env 文件内配置 RECAPTCHA_KEY、RECAPTCHA_TOKEN 变量")
-		rk = InnerRk
-		rt = InnerRt
-	}
+	//if rk == "" || rt == "" {
+	//	logrus.Warning("你没有提供`RECAPTCHA_KEY`、`RECAPTCHA_TOKEN`，使用内置参数；如若无法生成请在同级目录下的 .env 文件内配置 RECAPTCHA_KEY、RECAPTCHA_TOKEN 变量")
+	//	rk = InnerRk
+	//	rt = InnerRt
+	//}
 
 	if baseURL == "" {
 		baseURL = WebClaude2BU
@@ -260,21 +261,41 @@ func getKey(email, suffix, proxy string, session *requests.Session) (string, *re
 
 // send_code
 func partTwo(endpoint, baseURL, proxy string, email string, session *requests.Session) (string, error) {
-	response, _, err := newRequest(5*time.Second, proxy, http.MethodPost, baseURL+"auth/send_code", map[string]any{
-		"email_address":      email,
-		"recaptcha_site_key": rk,
-		"recaptcha_token":    rt,
-	}, nil)
-	if err != nil {
-		return "", err
-	}
+	if rev != "" {
+		response, _, err := newRequest(30*time.Second, "", http.MethodGet, rev+"/v1/send/"+email, nil, nil)
+		if err != nil {
+			return "", err
+		}
 
-	if response.StatusCode != 200 {
-		return "", errors.New("send_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
-	}
+		if response.StatusCode != 200 {
+			return "", errors.New("send_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
+		}
 
-	if response.Text != `{"success":true}` {
-		return "", errors.New("send_code Error: " + response.Text)
+		result, err := response.Json()
+		if err != nil {
+			return "", errors.New("send_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
+		}
+		if !result["result"].(bool) {
+			return "", errors.New(result["message"].(string))
+		}
+
+	} else {
+		response, _, err := newRequest(5*time.Second, proxy, http.MethodPost, baseURL+"auth/send_code", map[string]any{
+			"email_address":      email,
+			"recaptcha_site_key": rk,
+			"recaptcha_token":    rt,
+		}, nil)
+		if err != nil {
+			return "", err
+		}
+
+		if response.StatusCode != 200 {
+			return "", errors.New("send_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
+		}
+
+		if response.Text != `{"success":true}` {
+			return "", errors.New("send_code Error: " + response.Text)
+		}
 	}
 
 	//code, err := partThree(email, proxy, session)
@@ -282,36 +303,57 @@ func partTwo(endpoint, baseURL, proxy string, email string, session *requests.Se
 	if err != nil {
 		return "", err
 	}
-
 	return partFour(baseURL, code, email, proxy)
 }
 
 // 注册成功，返回token
 func partFour(baseURL, code string, email string, proxy string) (string, error) {
-	response, _, err := newRequest(10*time.Second, proxy, http.MethodPost, baseURL+"auth/verify_code", map[string]any{
-		"code":               code,
-		"email_address":      email,
-		"recaptcha_site_key": rk,
-		"recaptcha_token":    rt,
-	}, nil)
-	if err != nil {
-		return "", err
-	}
+	if rev != "" {
+		response, _, err := newRequest(30*time.Second, "", http.MethodGet, rev+"/v1/validate/"+email+"/"+code, nil, nil)
+		if err != nil {
+			return "", err
+		}
 
-	if response.StatusCode != 200 {
-		return "", errors.New("verify_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
-	}
+		if response.StatusCode != 200 {
+			return "", errors.New("verify_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
+		}
 
-	if response.Text != `{"success":true}` {
-		return "", errors.New("verify_code Error: " + response.Text)
-	}
+		result, err := response.Json()
+		if err != nil {
+			return "", errors.New("verify_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
+		}
+		if !result["result"].(bool) {
+			return "", errors.New(result["message"].(string))
+		}
 
-	sc := response.Headers.Get("Set-Cookie")
-	if !strings.HasPrefix(sc, "sessionKey") {
-		return "", errors.New("resolve Set-Cookie error")
+		return result["message"].(string), nil
+
+	} else {
+		response, _, err := newRequest(10*time.Second, proxy, http.MethodPost, baseURL+"auth/verify_code", map[string]any{
+			"code":               code,
+			"email_address":      email,
+			"recaptcha_site_key": rk,
+			"recaptcha_token":    rt,
+		}, nil)
+		if err != nil {
+			return "", err
+		}
+
+		if response.StatusCode != 200 {
+			return "", errors.New("verify_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
+		}
+
+		if response.Text != `{"success":true}` {
+			return "", errors.New("verify_code Error: " + response.Text)
+		}
+
+		sc := response.Headers.Get("Set-Cookie")
+		if !strings.HasPrefix(sc, "sessionKey") {
+			return "", errors.New("resolve Set-Cookie error")
+		}
+		slice := strings.Split(sc, ";")
+		return slice[0][11:], nil
 	}
-	slice := strings.Split(sc, ";")
-	return slice[0][11:], nil
 }
 
 // 接收验证码
