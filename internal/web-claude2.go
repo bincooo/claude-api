@@ -181,7 +181,7 @@ func (wc *WebClaude2) getOrganization() error {
 	//headers["user-agent"] = UA
 	response, err := wc.newRequest(30*time.Second, http.MethodGet, "organizations", nil, nil)
 	if err != nil {
-		return err
+		return errors.New("failed to fetch the `organizationId`: " + err.Error())
 	}
 	marshal, e := io.ReadAll(response.Body)
 	if e != nil {
@@ -196,12 +196,12 @@ func (wc *WebClaude2) getOrganization() error {
 		wc.organizationId = uid.(string)
 		return nil
 	}
-	return errors.New("failed to fetch the `organization-id`")
+	return errors.New("failed to fetch the `organizationId`")
 }
 
 func (wc *WebClaude2) createConversation() error {
 	if wc.organizationId == "" {
-		return errors.New("there is no corresponding `organization-id`")
+		return errors.New("there is no corresponding `organizationId`")
 	}
 
 	headers := make(Kv)
@@ -212,7 +212,7 @@ func (wc *WebClaude2) createConversation() error {
 	params["uuid"] = uuid.NewString()
 	response, err := wc.newRequest(30*time.Second, http.MethodPost, "organizations/"+wc.organizationId+"/chat_conversations", headers, params)
 	if err != nil {
-		return err
+		return errors.New("failed to fetch the `conversationId`: " + err.Error())
 	}
 
 	marshal, e := io.ReadAll(response.Body)
@@ -228,7 +228,7 @@ func (wc *WebClaude2) createConversation() error {
 		wc.conversationId = uid
 		return nil
 	}
-	return errors.New("failed to fetch the `conversation-id`")
+	return errors.New("failed to fetch the `conversationId`")
 }
 
 func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attrs []types.Attachment) (*models.Response, error) {
