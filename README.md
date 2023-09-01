@@ -165,7 +165,7 @@ version: '3'
 services:
   app:
     restart: always
-    image: bincooo/claude-helper:v1.0.0
+    image: bincooo/claude-helper:v1.0.1
     volumes:
      - ./.env:/code/.env
     environment:
@@ -177,7 +177,7 @@ services:
 docker command
 
 ```bash
-docker run --name claude-helper -p 8088:8080 -v ./.env:/code/.env -d bincooo/claude-helper:v1.0.0
+docker run --name claude-helper -p 8088:8080 -v ./.env:/code/.env -d bincooo/claude-helper:v1.0.1
 ```
 
 

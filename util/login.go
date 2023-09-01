@@ -262,7 +262,9 @@ func getKey(email, suffix, proxy string, session *requests.Session) (string, *re
 // send_code
 func partTwo(endpoint, baseURL, proxy string, email string, session *requests.Session) (string, error) {
 	if rev != "" {
-		response, _, err := newRequest(30*time.Second, "", http.MethodGet, rev+"/v1/send/"+email, nil, nil)
+		response, _, err := newRequest(30*time.Second, "", http.MethodPost, rev+"/send_code", map[string]any{
+			"email_address": email,
+		}, nil)
 		if err != nil {
 			return "", err
 		}
@@ -275,8 +277,8 @@ func partTwo(endpoint, baseURL, proxy string, email string, session *requests.Se
 		if err != nil {
 			return "", errors.New("send_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
 		}
-		if !result["result"].(bool) {
-			return "", errors.New(result["message"].(string))
+		if result["code"].(float64) != 200 {
+			return "", errors.New(result["msg"].(string))
 		}
 
 	} else {
@@ -301,9 +303,9 @@ func partTwo(endpoint, baseURL, proxy string, email string, session *requests.Se
 	//code, err := partThree(email, proxy, session)
 	code, err := partThree(endpoint, email, proxy, session)
 	if err != nil {
-		if rev != "" {
+		if rev != "" && !strings.Contains(rev, "claudeai.ai") {
 			// 接收失败清理
-			_, _, _ = newRequest(30*time.Second, "", http.MethodGet, rev+"/v1/delete/"+email, nil, nil)
+			_, _, _ = newRequest(30*time.Second, "", http.MethodGet, rev+"/delete/"+email, nil, nil)
 		}
 		return "", err
 	}
@@ -313,7 +315,10 @@ func partTwo(endpoint, baseURL, proxy string, email string, session *requests.Se
 // 注册成功，返回token
 func partFour(baseURL, code string, email string, proxy string) (string, error) {
 	if rev != "" {
-		response, _, err := newRequest(30*time.Second, "", http.MethodGet, rev+"/v1/validate/"+email+"/"+code, nil, nil)
+		response, _, err := newRequest(30*time.Second, "", http.MethodPost, rev+"/verify_code", map[string]any{
+			"email_address": email,
+			"verify_code":   code,
+		}, nil)
 		if err != nil {
 			return "", err
 		}
@@ -322,15 +327,21 @@ func partFour(baseURL, code string, email string, proxy string) (string, error) 
 			return "", errors.New("verify_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
 		}
 
+		sc := response.Headers.Get("Set-Cookie")
+		if strings.HasPrefix(sc, "sessionKey") {
+			slice := strings.Split(sc, ";")
+			return slice[0][11:], nil
+		}
+
 		result, err := response.Json()
 		if err != nil {
 			return "", errors.New("verify_code Error: " + strconv.Itoa(response.StatusCode) + " Text=" + response.Text)
 		}
-		if !result["result"].(bool) {
+		if result["code"].(float64) != 200 {
 			return "", errors.New(result["message"].(string))
 		}
 
-		return result["message"].(string), nil
+		return result["msg"].(string), nil
 
 	} else {
 		response, _, err := newRequest(10*time.Second, proxy, http.MethodPost, baseURL+"auth/verify_code", map[string]any{
@@ -379,7 +390,7 @@ func partThree(endpoint, email, proxy string, session *requests.Session) (string
 
 	r := gr(email)
 
-	cnt := 10
+	cnt := 18
 	for {
 		cnt--
 		if cnt < 0 {
