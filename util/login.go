@@ -301,6 +301,10 @@ func partTwo(endpoint, baseURL, proxy string, email string, session *requests.Se
 	//code, err := partThree(email, proxy, session)
 	code, err := partThree(endpoint, email, proxy, session)
 	if err != nil {
+		if rev != "" {
+			// 接收失败清理
+			_, _, _ = newRequest(30*time.Second, "", http.MethodGet, rev+"/v1/delete/"+email, nil, nil)
+		}
 		return "", err
 	}
 	return partFour(baseURL, code, email, proxy)

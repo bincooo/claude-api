@@ -128,6 +128,60 @@ func Println(partialResponse chan types.PartialResponse) {
 
 ### New 🎉🎉🎉
 
+（2023-09-01）自动刷取token凭证失效，添加临时方案（不保证可用性，也许会抽风）
+
+<span style="color:red">*</span>tips：<span style="color:red">对电脑要求比较高，吃性能</span>, 手机啥的就不要想了
+
+[视频教程](https://www.bilibili.com/video/BV1Sw411S7hZ)
+
+step 1:
+
+电脑需安装docker，自行研究安装。
+
+安装完成后执行命令，可查看是否安装成功
+
+```bash
+docker info
+```
+
+step 2:
+
+同级目录下创建`.env`文件，填写你的电脑ip和vpn （根据个人需要填写，英美地区电脑就不需要填写，留空）。
+
+ip是你本机的ip，不要填写127.0.0.1，不然容器无法识别
+
+```tex
+PROXY="http://[你电脑的ip]:7890"
+```
+
+step 3:
+
+运行镜像：docker compose和 指令二选一
+
+docker compose
+
+```vim
+version: '3'
+services:
+  app:
+    restart: always
+    image: bincooo/claude-helper:v1.0.0
+    volumes:
+     - ./.env:/code/.env
+    environment:
+     - ENABLED_X11VNC=no
+    ports:
+     - 8088:8080
+```
+
+docker command
+
+```bash
+docker run --name claude-helper -p 8088:8080 -v ./.env:/code/.env -d bincooo/claude-helper:v1.0.0
+```
+
+
+
 （2023-07-28）提供自动刷取token凭证
 `RECAPTCHA_KEY` 、`RECAPTCHA_TOKEN` 的值在claude.ai的登陆页面随意填写邮箱，点击发送后在开发者工具中的`https://claude.ai/api/auth/send_code` 请求中获取
 
