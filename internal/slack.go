@@ -80,6 +80,8 @@ func (s *Slack) Reply(ctx context.Context, prompt string, attrs []types.Attachme
 	return message, nil
 }
 
+func (*Slack) Delete() {}
+
 // 轮询回复消息
 func (s *Slack) poll(ctx context.Context, message chan types.PartialResponse) {
 	defer close(message)

@@ -7,6 +7,7 @@ import (
 type Chat interface {
 	NewChannel(name string) error
 	Reply(ctx context.Context, prompt string, attrs []Attachment) (chan PartialResponse, error)
+	Delete()
 }
 
 type Attachment struct {

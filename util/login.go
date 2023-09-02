@@ -7,6 +7,7 @@ import (
 	"github.com/bincooo/requests/models"
 	"github.com/bincooo/requests/url"
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 	"math/rand"
 	"net/http"
 	"os"
@@ -138,7 +139,7 @@ func partOne(suffix, proxy string) (string, string, *requests.Session, error) {
 	params := map[string]any{
 		"id": RandHexString(20),
 	}
-	response, session, err := newRequest(15*time.Second, proxy, http.MethodGet, string(ED)+"js/chunks/smailpro_v2_email.js", params, nil)
+	response, session, err := newRequest(5*time.Second, proxy, http.MethodGet, string(ED)+"js/chunks/smailpro_v2_email.js", params, nil)
 	if err != nil {
 		return "", "", nil, err
 	}
@@ -568,4 +569,40 @@ func RandHexString(length int) string {
 		b[i] = hexStr[rand.Intn(len(hexStr))]
 	}
 	return string(b)
+}
+
+// 缓存Key
+func cacheKey(key string) {
+	// 文件不存在...   就创建吧
+	if _, err := os.Lstat(".env"); os.IsNotExist(err) {
+		if _, e := os.Create(".env"); e != nil {
+			logrus.Error(e)
+			return
+		}
+	}
+
+	bytes, err := os.ReadFile(".env")
+	if err != nil {
+		logrus.Error(err)
+	}
+	tmp := string(bytes)
+	compileRegex := regexp.MustCompile(`(\n|^)CACHE_SMAIL_PRO\s*=[^\n]*`)
+	matchSlice := compileRegex.FindStringSubmatch(tmp)
+	if len(matchSlice) > 0 {
+		str := matchSlice[0]
+		if strings.HasPrefix(str, "\n") {
+			str = str[1:]
+		}
+		tmp = strings.Replace(tmp, str, "CACHE_SMAIL_PRO=\""+key+"\"", -1)
+	} else {
+		delimiter := ""
+		if len(tmp) > 0 && !strings.HasSuffix(tmp, "\n") {
+			delimiter = "\n"
+		}
+		tmp += delimiter + "CACHE_SMAIL_PRO=\"" + key + "\""
+	}
+	err = os.WriteFile(".env", []byte(tmp), 0664)
+	if err != nil {
+		logrus.Error(err)
+	}
 }

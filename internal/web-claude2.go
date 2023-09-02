@@ -231,6 +231,18 @@ func (wc *WebClaude2) createConversation() error {
 	return errors.New("failed to fetch the `conversationId`")
 }
 
+func (wc *WebClaude2) Delete() {
+	if wc.organizationId == "" {
+		return
+	}
+	if wc.conversationId == "" {
+		return
+	}
+	headers := make(Kv)
+	headers["user-agent"] = UA
+	_, _ = wc.newRequest(10*time.Second, http.MethodDelete, "organizations/"+wc.organizationId+"/chat_conversations/"+wc.conversationId, headers, nil)
+}
+
 func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attrs []types.Attachment) (*models.Response, error) {
 	if wc.organizationId == "" {
 		return nil, errors.New("there is no corresponding `organization-id`")
@@ -311,7 +323,7 @@ func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route str
 	case http.MethodGet:
 		response, err = requests.Get(bu+route, req)
 	default:
-		response, err = requests.RequestStream(http.MethodPost, bu+route, req)
+		response, err = requests.RequestStream(method, bu+route, req)
 	}
 
 	if err != nil {
