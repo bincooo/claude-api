@@ -129,6 +129,11 @@ func Println(partialResponse chan types.PartialResponse) {
 ### New 🎉🎉🎉
 
 （2023-09-01）自动刷取token凭证失效，添加临时方案（不保证可用性，也许会抽风）
+若无法搭建，可尝试使用claudeai.ai的国内转发(修改`.env`文件)：
+```vim
+# 自行搭建注册接口，或者直接使用claudeai.ai的：https://email.claudeai.ai/claude_api
+REV=https://email.claudeai.ai/claude_api
+```
 
 <span style="color:red">*</span>tips：<span style="color:red">对电脑要求比较高，吃性能</span>, 手机啥的就不要想了
 
