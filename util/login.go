@@ -377,26 +377,26 @@ func partThree(endpoint, email, proxy string, session *requests.Session) (string
 	split := strings.Split(endpoint, "###")
 	endpoint = split[0]
 
-	key, session, err := getKey(email, "", proxy, session)
-	if err != nil {
-		return "", err
-	}
-
+	r := gr(email)
 	params := map[string]any{
-		"key":          key,
+		"key":          "",
 		"rapidapi-key": split[1],
 		"email":        email,
 		"timestamp":    time.Now().Unix(),
 	}
 
-	r := gr(email)
-
-	cnt := 18
+	cnt := 10
 	for {
 		cnt--
 		if cnt < 0 {
 			return "", errors.New("接收邮件失败")
 		}
+		key, session, err := getKey(email, "", proxy, session)
+		if err != nil {
+			return "", err
+		}
+		params["key"] = key
+
 		response, _, err := newRequest(5*time.Second, proxy, http.MethodGet, endpoint+"/email/"+r+"/check", params, session)
 		if err != nil {
 			return "", err
@@ -426,7 +426,7 @@ func partThree(endpoint, email, proxy string, session *requests.Session) (string
 				return code, nil
 			}
 		}
-		time.Sleep(3 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 }
 
