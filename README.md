@@ -139,6 +139,8 @@ REV=https://email.claudeai.ai/claude_api
 
 [视频教程](https://www.bilibili.com/video/BV1Sw411S7hZ)
 
+<span style="color:red">镜像版本请以hub.docker.com上的为准！！</span> ：[点我查看](https://hub.docker.com/repository/docker/bincooo/claude-helper/tags?page=1&ordering=last_updated)
+
 step 1:
 
 电脑需安装docker，自行研究安装。
@@ -170,7 +172,7 @@ version: '3'
 services:
   app:
     restart: always
-    image: bincooo/claude-helper:v1.0.1
+    image: bincooo/claude-helper:v1.0.2
     volumes:
      - ./.env:/code/.env
     environment:
@@ -182,7 +184,7 @@ services:
 docker command
 
 ```bash
-docker run --name claude-helper -p 8088:8080 -v ./.env:/code/.env -d bincooo/claude-helper:v1.0.1
+docker run --name claude-helper -p 8088:8080 -v ./.env:/code/.env -d bincooo/claude-helper:v1.0.2
 ```
 
 
