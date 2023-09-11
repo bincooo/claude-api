@@ -139,7 +139,7 @@ REV=https://email.claudeai.ai/claude_api
 
 [视频教程](https://www.bilibili.com/video/BV1Sw411S7hZ)
 
-<span style="color:red">镜像版本请以hub.docker.com上的为准！！</span> ：[点我查看](https://hub.docker.com/repository/docker/bincooo/claude-helper/tags?page=1&ordering=last_updated)
+<span style="color:red">镜像版本请以hub.docker.com上的为准！！</span> ：[点我查看](https://hub.docker.com/r/bincooo/claude-helper/tags)
 
 step 1:
 
