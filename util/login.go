@@ -39,7 +39,6 @@ func init() {
 	err := godotenv.Load()
 	if err != nil {
 		logrus.Error(err)
-		os.Exit(-1)
 	}
 	JA3 = LoadEnvVar("JA3", JA3)
 	rev = LoadEnvVar("REV", "")
