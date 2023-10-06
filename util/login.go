@@ -217,6 +217,12 @@ func partFour(code string, email string) (string, error) {
 		return "", errors.New(result["message"].(string))
 	}
 
+	if result["cookies"] != nil {
+		sessionKey := result["cookies"].(map[string]any)["sessionKey"]
+		if sessionKey != "" {
+			return sessionKey.(string), nil
+		}
+	}
 	return result["msg"].(string), nil
 }
 
