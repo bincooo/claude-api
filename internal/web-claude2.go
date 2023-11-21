@@ -13,6 +13,7 @@ import (
 	"github.com/bincooo/requests/models"
 	"github.com/bincooo/requests/url"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"strings"
@@ -50,12 +51,13 @@ type WebClaude2 struct {
 	mu sync.Mutex
 	types.Options
 
+	mod            string
 	organizationId string
 	conversationId string
 }
 
 func NewWebClaude2(opt types.Options) types.Chat {
-	return &WebClaude2{Options: opt}
+	return &WebClaude2{mod: "claude-2", Options: opt}
 }
 
 func (wc *WebClaude2) NewChannel(string) error {
@@ -66,6 +68,10 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 	wc.mu.Lock()
 	if wc.Retry <= 0 {
 		wc.Retry = 1
+	}
+
+	if wc.mod == "" {
+		wc.mod = "claude-2"
 	}
 
 	if wc.organizationId == "" {
@@ -86,6 +92,13 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 	for index := 1; index <= wc.Retry; index++ {
 		r, err := wc.PostMessage(5*time.Minute, prompt, attrs)
 		if err != nil {
+			var c2e *types.Claude2Error
+			ok := errors.As(err, &c2e)
+			// 尝试新模型
+			if ok && c2e.ErrorType.Message == "Invalid model" {
+				logrus.Info("尝试新模型: claude-2.0-magenta")
+				wc.mod = "claude-2.0-magenta"
+			}
 			if index >= wc.Retry {
 				wc.mu.Unlock()
 				return nil, err
@@ -261,7 +274,7 @@ func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attrs []
 	params["organization_uuid"] = wc.organizationId
 	params["text"] = prompt
 	params["completion"] = Kv{
-		"model":    "claude-2",
+		"model":    wc.mod,
 		"prompt":   prompt,
 		"timezone": "America/New_York",
 	}
