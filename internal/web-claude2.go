@@ -24,6 +24,7 @@ import (
 const (
 	WebClaude2BU = "https://claude.ai/api"
 	UA           = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.79"
+	Mod          = "claude-2.1"
 )
 
 var (
@@ -57,7 +58,7 @@ type WebClaude2 struct {
 }
 
 func NewWebClaude2(opt types.Options) types.Chat {
-	return &WebClaude2{mod: "claude-2", Options: opt}
+	return &WebClaude2{mod: Mod, Options: opt}
 }
 
 func (wc *WebClaude2) NewChannel(string) error {
@@ -71,7 +72,7 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 	}
 
 	if wc.mod == "" {
-		wc.mod = "claude-2"
+		wc.mod = Mod
 	}
 
 	if wc.organizationId == "" {
