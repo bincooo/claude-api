@@ -24,7 +24,9 @@ import (
 const (
 	WebClaude2BU = "https://claude.ai/api"
 	UA           = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.79"
-	Mod          = "claude-2.1"
+	Mod          = "claude-2"
+	Mod_Magenta  = "claude-2.0-magenta"
+	Mod_V1       = "claude-2.1"
 )
 
 var (
@@ -67,8 +69,8 @@ func (wc *WebClaude2) NewChannel(string) error {
 
 func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.Attachment) (chan types.PartialResponse, error) {
 	wc.mu.Lock()
-	if wc.Retry <= 0 {
-		wc.Retry = 1
+	if wc.Retry < 3 {
+		wc.Retry = 3
 	}
 
 	if wc.mod == "" {
@@ -97,8 +99,13 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 			ok := errors.As(err, &c2e)
 			// 尝试新模型
 			if ok && c2e.ErrorType.Message == "Invalid model" {
-				logrus.Info("尝试新模型: claude-2.0-magenta")
-				wc.mod = "claude-2.0-magenta"
+				if wc.mod == Mod {
+					logrus.Info("尝试新模型: ", Mod_Magenta)
+					wc.mod = Mod_Magenta
+				} else {
+					logrus.Info("尝试新模型: ", Mod_V1)
+					wc.mod = Mod_V1
+				}
 			}
 			if index >= wc.Retry {
 				wc.mu.Unlock()
