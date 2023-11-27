@@ -95,8 +95,15 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 	for index := 1; index <= wc.Retry; index++ {
 		r, err := wc.PostMessage(5*time.Minute, prompt, attrs)
 		if err != nil {
+			if index >= wc.Retry {
+				wc.mu.Unlock()
+				return nil, err
+			}
+
+			logrus.Error("[retry] ", err)
 			var c2e *types.Claude2Error
 			ok := errors.As(err, &c2e)
+
 			// 尝试新模型
 			if ok && c2e.ErrorType.Message == "Invalid model" {
 				if wc.mod == Mod {
@@ -106,10 +113,6 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 					logrus.Info("尝试新模型: ", Mod_V1)
 					wc.mod = Mod_V1
 				}
-			}
-			if index >= wc.Retry {
-				wc.mu.Unlock()
-				return nil, err
 			}
 		} else {
 			response = r
