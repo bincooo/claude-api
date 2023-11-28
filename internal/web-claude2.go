@@ -31,8 +31,22 @@ const (
 
 var (
 	JA3       = "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-13-18-51-45-43-27-17513-21,29-23-24,0"
-	cacheMods = make(map[string]string)
+	cacheMods = make(map[string]_mod)
 )
+
+type _mod struct {
+	time.Time
+	model string
+}
+
+func _delMods() {
+	for k, v := range cacheMods {
+		// 30分钟内没有使用，则清理
+		if v.Add(30 * time.Minute).Before(time.Now()) {
+			delete(cacheMods, k)
+		}
+	}
+}
 
 func init() {
 	JA3 = util.LoadEnvVar("JA3", JA3)
@@ -94,10 +108,9 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 
 	// 避免每次都检查新模型
 	if mod, ok := cacheMods[wc.organizationId]; ok {
-		wc.mod = mod
-	} else {
-		cacheMods[wc.organizationId] = wc.mod
+		wc.mod = mod.model
 	}
+	cacheMods[wc.organizationId] = _mod{time.Now(), wc.mod}
 
 	var response *models.Response
 	for index := 1; index <= wc.Retry; index++ {
@@ -121,7 +134,7 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 					logrus.Info("尝试新模型: ", Mod_V1)
 					wc.mod = Mod_V1
 				}
-				cacheMods[wc.organizationId] = wc.mod
+				cacheMods[wc.organizationId] = _mod{time.Now(), wc.mod}
 			}
 		} else {
 			response = r
@@ -271,7 +284,7 @@ func (wc *WebClaude2) Delete() {
 	if wc.conversationId == "" {
 		return
 	}
-	delete(cacheMods, wc.organizationId)
+	_delMods()
 	headers := make(Kv)
 	headers["user-agent"] = UA
 	_, _ = wc.newRequest(10*time.Second, http.MethodDelete, "organizations/"+wc.organizationId+"/chat_conversations/"+wc.conversationId, headers, nil)
