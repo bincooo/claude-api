@@ -75,7 +75,7 @@ type WebClaude2 struct {
 }
 
 func NewWebClaude2(opt types.Options) types.Chat {
-	return &WebClaude2{mod: Mod, Options: opt}
+	return &WebClaude2{mod: Mod_V1, Options: opt}
 }
 
 func (wc *WebClaude2) NewChannel(string) error {
@@ -84,12 +84,12 @@ func (wc *WebClaude2) NewChannel(string) error {
 
 func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.Attachment) (chan types.PartialResponse, error) {
 	wc.mu.Lock()
-	if wc.Retry < 3 {
-		wc.Retry = 3
+	if wc.Retry < 1 {
+		wc.Retry = 1
 	}
 
 	if wc.mod == "" {
-		wc.mod = Mod
+		wc.mod = Mod_V1
 	}
 
 	if wc.organizationId == "" {
@@ -122,20 +122,20 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 			}
 
 			logrus.Error("[retry] ", err)
-			var c2e *types.Claude2Error
-			ok := errors.As(err, &c2e)
+			//var c2e *types.Claude2Error
+			//ok := errors.As(err, &c2e)
 
 			// 尝试新模型
-			if ok && c2e.ErrorType.Message == "Invalid model" {
-				if wc.mod == Mod {
-					logrus.Info("尝试新模型: ", Mod_Magenta)
-					wc.mod = Mod_Magenta
-				} else {
-					logrus.Info("尝试新模型: ", Mod_V1)
-					wc.mod = Mod_V1
-				}
-				cacheMods[wc.organizationId] = _mod{time.Now(), wc.mod}
-			}
+			//if ok && c2e.ErrorType.Message == "Invalid model" {
+			//	if wc.mod == Mod {
+			//		logrus.Info("尝试新模型: ", Mod_Magenta)
+			//		wc.mod = Mod_Magenta
+			//	} else {
+			//		logrus.Info("尝试新模型: ", Mod_V1)
+			//		wc.mod = Mod_V1
+			//	}
+			//	cacheMods[wc.organizationId] = _mod{time.Now(), wc.mod}
+			//}
 		} else {
 			response = r
 			break
