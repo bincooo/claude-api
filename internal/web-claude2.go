@@ -24,14 +24,16 @@ import (
 const (
 	WebClaude2BU = "https://claude.ai/api"
 	UA           = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.79"
-	Mod          = "claude-2"
-	Mod_Magenta  = "claude-2.0-magenta"
+	Mod          = "claude-2.0"
 	Mod_V1       = "claude-2.1"
+	//Mod_Magenta  = "claude-2.0-magenta"
+
+	gRetry = 2
 )
 
 var (
-	JA3 = "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-13-18-51-45-43-27-17513-21,29-23-24,0"
-	//cacheMods = make(map[string]_mod)
+	JA3       = "771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49171-49172-156-157-47-53,0-23-65281-10-11-35-16-5-13-18-51-45-43-27-17513-21,29-23-24,0"
+	cacheMods = make(map[string]_mod)
 )
 
 type _mod struct {
@@ -39,14 +41,14 @@ type _mod struct {
 	model string
 }
 
-//func _delMods() {
-//	for k, v := range cacheMods {
-//		// 30分钟内没有使用，则清理
-//		if v.Add(30 * time.Minute).Before(time.Now()) {
-//			delete(cacheMods, k)
-//		}
-//	}
-//}
+func _delMods() {
+	for k, v := range cacheMods {
+		// 10分钟内没有使用，则清理
+		if v.Add(10 * time.Minute).Before(time.Now()) {
+			delete(cacheMods, k)
+		}
+	}
+}
 
 func init() {
 	JA3 = util.LoadEnvVar("JA3", JA3)
@@ -84,8 +86,8 @@ func (wc *WebClaude2) NewChannel(string) error {
 
 func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.Attachment) (chan types.PartialResponse, error) {
 	wc.mu.Lock()
-	if wc.Retry < 1 {
-		wc.Retry = 1
+	if wc.Retry < gRetry {
+		wc.Retry = gRetry
 	}
 
 	if wc.mod == "" {
@@ -107,10 +109,10 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 	}
 
 	// 避免每次都检查新模型
-	//if mod, ok := cacheMods[wc.organizationId]; ok {
-	//	wc.mod = mod.model
-	//}
-	//cacheMods[wc.organizationId] = _mod{time.Now(), wc.mod}
+	if mod, ok := cacheMods[wc.organizationId]; ok {
+		wc.mod = mod.model
+	}
+	cacheMods[wc.organizationId] = _mod{time.Now(), wc.mod}
 
 	var response *models.Response
 	for index := 1; index <= wc.Retry; index++ {
@@ -121,21 +123,19 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 				return nil, err
 			}
 
-			logrus.Error("[retry] ", err)
-			//var c2e *types.Claude2Error
-			//ok := errors.As(err, &c2e)
+			var c2e *types.Claude2Error
+			ok := errors.As(err, &c2e)
 
 			// 尝试新模型
-			//if ok && c2e.ErrorType.Message == "Invalid model" {
-			//	if wc.mod == Mod {
-			//		logrus.Info("尝试新模型: ", Mod_Magenta)
-			//		wc.mod = Mod_Magenta
-			//	} else {
-			//		logrus.Info("尝试新模型: ", Mod_V1)
-			//		wc.mod = Mod_V1
-			//	}
-			//	cacheMods[wc.organizationId] = _mod{time.Now(), wc.mod}
-			//}
+			if ok && c2e.ErrorType.Message == "Invalid model" {
+				if wc.mod == Mod {
+					logrus.Info("尝试新模型: ", Mod_V1)
+					wc.mod = Mod_V1
+				}
+				cacheMods[wc.organizationId] = _mod{time.Now(), wc.mod}
+			} else {
+				logrus.Error("[retry] ", err)
+			}
 		} else {
 			response = r
 			break
@@ -284,7 +284,7 @@ func (wc *WebClaude2) Delete() {
 	if wc.conversationId == "" {
 		return
 	}
-	//_delMods()
+	_delMods()
 	headers := make(Kv)
 	headers["user-agent"] = UA
 	_, _ = wc.newRequest(10*time.Second, http.MethodDelete, "organizations/"+wc.organizationId+"/chat_conversations/"+wc.conversationId, headers, nil)
