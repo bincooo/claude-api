@@ -77,7 +77,7 @@ type WebClaude2 struct {
 }
 
 func NewWebClaude2(opt types.Options) types.Chat {
-	return &WebClaude2{mod: Mod_V1, Options: opt}
+	return &WebClaude2{mod: Mod, Options: opt}
 }
 
 func (wc *WebClaude2) NewChannel(string) error {
@@ -91,7 +91,7 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 	}
 
 	if wc.mod == "" {
-		wc.mod = Mod_V1
+		wc.mod = Mod
 	}
 
 	if wc.organizationId == "" {
@@ -119,6 +119,7 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 		r, err := wc.PostMessage(5*time.Minute, prompt, attrs)
 		if err != nil {
 			if index >= wc.Retry {
+				delete(cacheMods, wc.organizationId)
 				wc.mu.Unlock()
 				return nil, err
 			}
