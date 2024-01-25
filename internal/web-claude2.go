@@ -124,11 +124,11 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 				return nil, err
 			}
 
-			var c2e *types.Claude2Error
-			ok := errors.As(err, &c2e)
+			var wap *types.ErrorWrapper
+			ok := errors.As(err, &wap)
 
 			// 尝试新模型
-			if ok && c2e.ErrorType.Message == "Invalid model" {
+			if ok && wap.ErrorType.Message == "Invalid model" {
 				if wc.mod == Mod {
 					logrus.Info("尝试新模型: ", Mod_V1)
 					wc.mod = Mod_V1
@@ -191,8 +191,7 @@ func (wc *WebClaude2) resolve(ctx context.Context, r *models.Response, message c
 
 		dst = bytes.TrimPrefix(dst, block)
 		var response webClaude2Response
-		if e := IgnorePanicUnmarshal(dst, &response); e != nil {
-			//fmt.Println(e)
+		if err = CatchUnmarshal(dst, &response); err != nil {
 			return false
 		}
 
@@ -379,19 +378,20 @@ func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route str
 	}
 
 	if response.StatusCode >= 400 {
-		data, err := io.ReadAll(response.Body)
+		var data []byte
+		data, err = io.ReadAll(response.Body)
 		defer response.Body.Close()
 		if err != nil {
 			return nil, err
 		}
 		encoding := response.Headers.Get("Content-Encoding")
 		requests.DecompressBody(&data, encoding)
-		c2err := &types.Claude2Error{}
-		err = json.Unmarshal(data, c2err)
+		var wap types.ErrorWrapper
+		err = json.Unmarshal(data, &wap)
 		if err != nil {
 			return nil, fmt.Errorf("%d: %s", response.StatusCode, data)
 		}
-		return nil, c2err
+		return nil, &wap
 	}
 
 	return response, nil
@@ -399,15 +399,13 @@ func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route str
 
 // ====
 
-func IgnorePanicUnmarshal(data []byte, v any) (err error) {
+func CatchUnmarshal(data []byte, v any) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			//fmt.Println("发生了panic:", r)
 			if rec, ok := r.(string); ok {
 				err = errors.New(rec)
 			}
 		}
 	}()
-	//fmt.Println(string(data))
 	return json.Unmarshal(data, v)
 }

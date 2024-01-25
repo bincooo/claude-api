@@ -2,6 +2,7 @@ package types
 
 import (
 	"context"
+	"fmt"
 )
 
 type Chat interface {
@@ -30,4 +31,18 @@ type PartialResponse struct {
 	Error   error  `json:"-"`
 	Text    string `json:"text"`
 	RawData []byte `json:"-"`
+}
+
+type ErrorWrapper struct {
+	ErrorType ErrorType `json:"error"`
+	Detail    string    `json:"detail"`
+}
+
+type ErrorType struct {
+	Type    string `json:"type"`
+	Message string `json:"message"`
+}
+
+func (c ErrorWrapper) Error() string {
+	return fmt.Sprintf("[Claude2Error::%s]%s: %s", c.ErrorType.Type, c.ErrorType.Message, c.Detail)
 }

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/bincooo/claude-api"
 	"github.com/bincooo/claude-api/types"
-	"github.com/bincooo/claude-api/util"
 	"github.com/bincooo/claude-api/vars"
 	"time"
 )
@@ -29,16 +28,17 @@ const (
 
 func main() {
 	var (
-		token = "sk-ant-xxx"
+		token = "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"
 	)
-	email, tk, err := util.LoginFor("", "gmail.com", "http://127.0.0.1:7890")
-	if err != nil {
-		panic(err)
-	}
-	token = tk
-	fmt.Println(email)
+	// email, tk, err := util.LoginFor("", "gmail.com", "http://127.0.0.1:7890")
+	//if err != nil {
+	//	panic(err)
+	//}
+	//token = tk
+	//fmt.Println(email)
 	options := claude.NewDefaultOptions(token, "", vars.Model4WebClaude2)
-	options.Agency = "http://127.0.0.1:7890"
+	//options.Agency = "http://127.0.0.1:7890"
+	options.BaseURL = "https://bincooo-single-proxy.hf.space/api"
 	chat, err := claude.New(options)
 	if err != nil {
 		panic(err)

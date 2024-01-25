@@ -9,18 +9,12 @@ import (
 	"strings"
 )
 
-func NewDefaultOptions(token string, botId string, model string) types.Options {
+func NewDefaultOptions(token string, model string) types.Options {
 	options := types.Options{
 		Retry: 2,
-		BotId: botId,
 		Model: model,
 	}
 
-	if model == vars.Model4Slack {
-		options.Headers = map[string]string{
-			"Authorization": "Bearer " + token,
-		}
-	}
 	switch model {
 	case vars.Model4Slack:
 		options.Headers = map[string]string{
@@ -45,6 +39,6 @@ func New(opt types.Options) (types.Chat, error) {
 	case vars.Model4WebClaude2:
 		return internal.NewWebClaude2(opt), nil
 	default:
-		return nil, errors.New(fmt.Sprintf("Unknown model: `%v`", opt.Model))
+		return nil, errors.New(fmt.Sprintf("unknown model: `%v`", opt.Model))
 	}
 }
