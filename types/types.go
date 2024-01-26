@@ -44,5 +44,5 @@ type ErrorType struct {
 }
 
 func (c ErrorWrapper) Error() string {
-	return fmt.Sprintf("[Claude2Error::%s]%s: %s", c.ErrorType.Type, c.ErrorType.Message, c.Detail)
+	return fmt.Sprintf("[ClaudeError::%s]%s: %s", c.ErrorType.Type, c.ErrorType.Message, c.Detail)
 }
