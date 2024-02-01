@@ -315,6 +315,7 @@ func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attrs []
 
 	headers := make(Kv)
 	headers["user-agent"] = UA
+	headers["referer"] = "https://claude.ai"
 	headers["accept"] = "text/event-stream"
 	return wc.newRequest(timeout, http.MethodPost, "append_message", headers, params)
 }
