@@ -1,4 +1,4 @@
-package main
+package claude2
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/bincooo/claude-api"
 	"github.com/bincooo/claude-api/types"
 	"github.com/bincooo/claude-api/vars"
+	"testing"
 	"time"
 )
 
@@ -26,9 +27,9 @@ const (
 `
 )
 
-func main() {
+func Test_messages(t *testing.T) {
 	var (
-		token = "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"
+		token = "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"
 	)
 	// email, tk, err := util.LoginFor("", "gmail.com", "http://127.0.0.1:7890")
 	//if err != nil {
@@ -36,29 +37,29 @@ func main() {
 	//}
 	//token = tk
 	//fmt.Println(email)
-	options := claude.NewDefaultOptions(token, "", vars.Model4WebClaude2)
-	//options.Agency = "http://127.0.0.1:7890"
-	options.BaseURL = "https://bincooo-single-proxy.hf.space/api"
+	options := claude.NewDefaultOptions(token, vars.Model4WebClaude2)
+	options.Proxies = "http://127.0.0.1:7890"
+	//options.BaseURL = "https://bincooo-single-proxy.hf.space/api"
 	chat, err := claude.New(options)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
 
 	prompt := "hi"
 	fmt.Println("You: ", prompt)
 	partialResponse, err := chat.Reply(context.Background(), prompt, nil)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	Println(partialResponse)
+	Println(t, partialResponse)
 
 	prompt = "who are you?"
 	fmt.Println("You: ", prompt)
 	partialResponse, err = chat.Reply(context.Background(), prompt, nil)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	Println(partialResponse)
+	Println(t, partialResponse)
 
 	prompt = "总结附件内容："
 	fmt.Println("You: ", prompt)
@@ -73,12 +74,12 @@ func main() {
 		},
 	})
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	Println(partialResponse)
+	Println(t, partialResponse)
 }
 
-func Println(partialResponse chan types.PartialResponse) {
+func Println(t *testing.T, partialResponse chan types.PartialResponse) {
 	for {
 		message, ok := <-partialResponse
 		if !ok {
@@ -86,7 +87,7 @@ func Println(partialResponse chan types.PartialResponse) {
 		}
 
 		if message.Error != nil {
-			panic(message.Error)
+			t.Fatal(message.Error)
 		}
 
 		fmt.Println(message.Text)

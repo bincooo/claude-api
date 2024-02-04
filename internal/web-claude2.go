@@ -16,6 +16,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -71,13 +72,13 @@ type WebClaude2 struct {
 	mu sync.Mutex
 	types.Options
 
-	mod            string
-	organizationId string
-	conversationId string
+	mod string
+	oid string
+	cid string
 }
 
 func NewWebClaude2(opt types.Options) types.Chat {
-	return &WebClaude2{mod: Mod, Options: opt}
+	return &WebClaude2{mod: "", Options: opt}
 }
 
 func (wc *WebClaude2) NewChannel(string) error {
@@ -91,35 +92,25 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 	}
 
 	if wc.mod == "" {
-		wc.mod = Mod
-	}
-
-	if wc.organizationId == "" {
-		if err := wc.getOrganization(); err != nil {
-			wc.mu.Unlock()
+		model, err := wc.loadModel()
+		if err != nil {
 			return nil, err
 		}
-	}
-
-	if wc.conversationId == "" {
-		if err := wc.createConversation(); err != nil {
-			wc.mu.Unlock()
-			return nil, err
-		}
+		wc.mod = model
 	}
 
 	// 避免每次都检查新模型
-	if mod, ok := cacheMods[wc.organizationId]; ok {
+	if mod, ok := cacheMods[wc.oid]; ok {
 		wc.mod = mod.model
 	}
-	cacheMods[wc.organizationId] = _mod{time.Now(), wc.mod}
+	cacheMods[wc.oid] = _mod{time.Now(), wc.mod}
 
 	var response *models.Response
 	for index := 1; index <= wc.Retry; index++ {
 		r, err := wc.PostMessage(5*time.Minute, prompt, attrs)
 		if err != nil {
 			if index >= wc.Retry {
-				delete(cacheMods, wc.organizationId)
+				delete(cacheMods, wc.oid)
 				wc.mu.Unlock()
 				return nil, err
 			}
@@ -133,7 +124,7 @@ func (wc *WebClaude2) Reply(ctx context.Context, prompt string, attrs []types.At
 					logrus.Info("尝试新模型: ", Mod_V1)
 					wc.mod = Mod_V1
 				}
-				cacheMods[wc.organizationId] = _mod{time.Now(), wc.mod}
+				cacheMods[wc.oid] = _mod{time.Now(), wc.mod}
 			} else {
 				logrus.Error("[retry] ", err)
 			}
@@ -222,32 +213,35 @@ func (wc *WebClaude2) resolve(ctx context.Context, r *models.Response, message c
 	}
 }
 
-func (wc *WebClaude2) getOrganization() error {
+func (wc *WebClaude2) getOrganization() (string, error) {
 	//headers := make(Kv)
 	//headers["user-agent"] = UA
+	if wc.oid != "" {
+		return wc.oid, nil
+	}
 	response, err := wc.newRequest(30*time.Second, http.MethodGet, "organizations", nil, nil)
 	if err != nil {
-		return errors.New("failed to fetch the `organizationId`: " + err.Error())
+		return "", errors.New("failed to fetch the `organizationId`: " + err.Error())
 	}
 	marshal, e := io.ReadAll(response.Body)
 	if e != nil {
-		return e
+		return "", e
 	}
 
 	result := make([]map[string]any, 0)
 	if e = json.Unmarshal(marshal, &result); e != nil {
-		return e
+		return "", e
 	}
 	if uid, _ := result[0]["uuid"]; uid != nil && uid != "" {
-		wc.organizationId = uid.(string)
-		return nil
+		wc.oid = uid.(string)
+		return wc.oid, nil
 	}
-	return errors.New("failed to fetch the `organizationId`")
+	return "", errors.New("failed to fetch the `organizationId`")
 }
 
-func (wc *WebClaude2) createConversation() error {
-	if wc.organizationId == "" {
-		return errors.New("there is no corresponding `organizationId`")
+func (wc *WebClaude2) createConversation(oid string) (string, error) {
+	if wc.cid != "" {
+		return wc.cid, nil
 	}
 
 	headers := make(Kv)
@@ -256,46 +250,94 @@ func (wc *WebClaude2) createConversation() error {
 	params := make(map[string]any)
 	params["name"] = ""
 	params["uuid"] = uuid.NewString()
-	response, err := wc.newRequest(30*time.Second, http.MethodPost, "organizations/"+wc.organizationId+"/chat_conversations", headers, params)
+	response, err := wc.newRequest(30*time.Second, http.MethodPost, "organizations/"+oid+"/chat_conversations", headers, params)
 	if err != nil {
-		return errors.New("failed to fetch the `conversationId`: " + err.Error())
+		return "", errors.New("failed to fetch the `conversationId`: " + err.Error())
 	}
 
 	marshal, e := io.ReadAll(response.Body)
 	if e != nil {
-		return e
+		return "", e
 	}
 	result := make(Kv, 0)
 	if e = json.Unmarshal(marshal, &result); e != nil {
-		return e
+		return "", e
 	}
 
 	if uid, _ := result["uuid"]; uid != "" {
-		wc.conversationId = uid
-		return nil
+		wc.cid = uid
+		return uid, nil
 	}
-	return errors.New("failed to fetch the `conversationId`")
+	return "", errors.New("failed to fetch the `conversationId`")
+}
+
+// 加载默认模型
+func (wc *WebClaude2) loadModel() (string, error) {
+	oid, err := wc.getOrganization()
+	if err != nil {
+		return "", err
+	}
+
+	headers := make(Kv)
+	headers["user-agent"] = UA
+
+	response, err := wc.newRequest(30*time.Second, http.MethodGet, "account/statsig/"+oid, headers, nil)
+	if err != nil {
+		return "", errors.New("failed to fetch the config: " + err.Error())
+	}
+
+	if response.StatusCode != http.StatusOK {
+		return "", errors.New(fmt.Sprintf("failed to fetch the config: %d", response.StatusCode))
+	}
+	marshal, e := io.ReadAll(response.Body)
+	if e != nil {
+		return "", e
+	}
+
+	compileRegex := regexp.MustCompile(`"value":{"model":"(claude[^"]+)"}`)
+	matchArr := compileRegex.FindStringSubmatch(string(marshal))
+	if len(matchArr) == 0 {
+		return "", errors.New("failed to fetch the `conversationId`")
+	}
+	return matchArr[len(matchArr)-1], nil
 }
 
 func (wc *WebClaude2) Delete() {
-	if wc.organizationId == "" {
+	if wc.oid == "" {
 		return
 	}
-	if wc.conversationId == "" {
+	if wc.cid == "" {
 		return
 	}
 	_delMods()
 	headers := make(Kv)
 	headers["user-agent"] = UA
-	_, _ = wc.newRequest(10*time.Second, http.MethodDelete, "organizations/"+wc.organizationId+"/chat_conversations/"+wc.conversationId, headers, nil)
+	_, _ = wc.newRequest(10*time.Second, http.MethodDelete, "organizations/"+wc.oid+"/chat_conversations/"+wc.cid, headers, nil)
+	wc.cid = ""
 }
 
 func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attrs []types.Attachment) (*models.Response, error) {
-	if wc.organizationId == "" {
-		return nil, errors.New("there is no corresponding `organization-id`")
+	var (
+		organizationId string
+		conversationId string
+	)
+
+	// 获取组织ID
+	{
+		oid, err := wc.getOrganization()
+		if err != nil {
+			return nil, err
+		}
+		organizationId = oid
 	}
-	if wc.conversationId == "" {
-		return nil, errors.New("there is no corresponding `conversation-id`")
+
+	// 获取会话ID
+	{
+		cid, err := wc.createConversation(organizationId)
+		if err != nil {
+			return nil, errors.New("there is no corresponding `conversation-id`")
+		}
+		conversationId = cid
 	}
 
 	params := make(map[string]any)
@@ -304,20 +346,23 @@ func (wc *WebClaude2) PostMessage(timeout time.Duration, prompt string, attrs []
 	} else {
 		params["attachments"] = []any{}
 	}
-	params["conversation_uuid"] = wc.conversationId
-	params["organization_uuid"] = wc.organizationId
-	params["text"] = prompt
-	params["completion"] = Kv{
-		"model":    wc.mod,
-		"prompt":   prompt,
-		"timezone": "America/New_York",
-	}
+	//params["conversation_uuid"] = conversationId
+	//params["organization_uuid"] = organizationId
+	params["timezone"] = "America/New_York"
+	params["prompt"] = prompt
+	params["model"] = wc.mod
+	//params["text"] = prompt
+	//params["completion"] = Kv{
+	//	"model":    wc.mod,
+	//	"prompt":   prompt,
+	//	"timezone": "America/New_York",
+	//}
 
 	headers := make(Kv)
 	headers["user-agent"] = UA
 	headers["referer"] = "https://claude.ai"
 	headers["accept"] = "text/event-stream"
-	return wc.newRequest(timeout, http.MethodPost, "append_message", headers, params)
+	return wc.newRequest(timeout, http.MethodPost, fmt.Sprintf("organizations/%s/chat_conversations/%s/completion", organizationId, conversationId), headers, params)
 }
 
 func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route string, headers map[string]string, params map[string]any) (response *models.Response, err error) {
@@ -342,8 +387,8 @@ func (wc *WebClaude2) newRequest(timeout time.Duration, method string, route str
 		req.Json = params
 	}
 
-	if wc.Agency != "" {
-		req.Proxies = wc.Agency
+	if wc.Proxies != "" {
+		req.Proxies = wc.Proxies
 	}
 
 	uHeaders := url.NewHeaders()

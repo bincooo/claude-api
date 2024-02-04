@@ -23,7 +23,7 @@ type Options struct {
 	Retry   int               // 重试次数
 	BotId   string            // slack里的claude-id
 	Model   string            // 提供两个模型：slack 、 web-claude-2
-	Agency  string            // 本地代理
+	Proxies string            // 本地代理
 	BaseURL string            // 可代理转发
 }
 
