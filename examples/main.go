@@ -11,17 +11,19 @@ import (
 
 func main() {
 	const (
-		token = "xoxp-xxx"
-		botId = "U05382WAQ1M"
+		token = "xoxp-5110104947559-5121704326917-6698375551106-dbce9445e6aa4a469ea1815fecd87684"
+		botId = "U06L3PBRPU7"
 	)
-	options := claude.NewDefaultOptions(token, botId, vars.Model4Slack)
+	options := claude.NewDefaultOptions(token, vars.Model4Slack)
+	options.BotId = botId
+
 	chat, err := claude.New(options)
 	if err != nil {
 		panic(err)
 	}
 
 	// 如果不手建频道，默认使用chat-9527
-	if err := chat.NewChannel("chat-7890"); err != nil {
+	if err = chat.NewChannel("chat-7890"); err != nil {
 		panic(err)
 	}
 

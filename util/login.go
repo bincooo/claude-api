@@ -38,7 +38,7 @@ type Kv = map[string]string
 func init() {
 	err := godotenv.Load()
 	if err != nil {
-		logrus.Error(err)
+		//logrus.Error(err)
 	}
 	JA3 = LoadEnvVar("JA3", JA3)
 	rev = LoadEnvVar("REV", "")

@@ -29,7 +29,7 @@ const (
 
 func Test_messages(t *testing.T) {
 	var (
-		token = "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"
+		token = "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"
 	)
 	// email, tk, err := util.LoginFor("", "gmail.com", "http://127.0.0.1:7890")
 	//if err != nil {
@@ -38,8 +38,8 @@ func Test_messages(t *testing.T) {
 	//token = tk
 	//fmt.Println(email)
 	options := claude.NewDefaultOptions(token, vars.Model4WebClaude2)
-	options.Proxies = "http://127.0.0.1:7890"
-	//options.BaseURL = "https://bincooo-single-proxy.hf.space/api"
+	//options.Proxies = "http://127.0.0.1:7890"
+	options.BaseURL = "https://bincooo-single-proxy.hf.space/claude/api"
 	chat, err := claude.New(options)
 	if err != nil {
 		t.Fatal(err)
