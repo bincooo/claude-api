@@ -53,7 +53,7 @@ func NewSlack(opt types.Options) types.Chat {
 	return &Slack{Options: opt}
 }
 
-func (s *Slack) Reply(ctx context.Context, prompt string, attrs []types.Attachment) (chan types.PartialResponse, error) {
+func (s *Slack) Reply(ctx context.Context, prompt string, _ []types.Attachment) (chan types.PartialResponse, error) {
 	if s.Retry <= 0 {
 		s.Retry = 1
 	}

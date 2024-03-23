@@ -38,8 +38,8 @@ func Test_messages(t *testing.T) {
 	//token = tk
 	//fmt.Println(email)
 	options := claude.NewDefaultOptions(token, vars.Model4WebClaude2)
-	//options.Proxies = "http://127.0.0.1:7890"
-	options.BaseURL = "https://bincooo-single-proxy.hf.space/claude/api"
+	options.Proxies = "socks5://127.0.0.1:7890"
+	//options.BaseURL = "https://bincooo-single-proxy.hf.space/claude/api"
 	chat, err := claude.New(options)
 	if err != nil {
 		t.Fatal(err)
