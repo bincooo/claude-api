@@ -165,6 +165,9 @@ func (wc *WebClaude2) resolve(ctx context.Context, r *models.Response, message c
 		}
 
 		dst = bytes.TrimPrefix(dst, block)
+		logrus.Tracef("--------- ORIGINAL MESSAGE ---------")
+		logrus.Tracef("%s", dst)
+
 		var response webClaude2Response
 		if err = CatchUnmarshal(dst, &response); err != nil {
 			return false
