@@ -66,7 +66,7 @@ func NewDefaultOptions(cookies string, model string) (*Options, error) {
 }
 
 func New(opts *Options) (*Chat, error) {
-	if opts.Model != "" && strings.HasPrefix(opts.Model, "claude-") {
+	if opts.Model != "" && !strings.HasPrefix(opts.Model, "claude-") {
 		return nil, errors.New("claude-model cannot has `claude-` prefix")
 	}
 	return &Chat{
