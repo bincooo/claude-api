@@ -1,8 +1,6 @@
 
 
-### ClaudeAI for [Node.js](./README_node.md)/GoLang
-
-Slack Conversation Library for ClaudeAI.
+### WEB ClaudeAI for GoLang
 
 Web Conversation Library for ClaudeAI.  [link](https://claude.ai/chat)
 
@@ -14,65 +12,52 @@ go get github.com/bincooo/claude-api@[commit]
 ```
 
 ```go
-var (
-    token = "sk-ant-xxx"
-    attrCtx = "==附件内容=="
+const (
+	cookies = "xxx"
 )
 
-// 可自动获取token，无需手动注册
-tk, err := util.Login("http://127.0.0.1:7890")
-if err != nil {
-    panic(err)
-}
-token = tk
-options := claude.NewDefaultOptions(token, "", vars.Model4WebClaude2)
-options.Agency = "http://127.0.0.1:7890"
-chat, err := claude.New(options)
-if err != nil {
-    panic(err)
+fun main() {
+	session := emit.NewJa3Session("http://127.0.0.1:7890", 180*time.Second)
+	options, err := NewDefaultOptions(cookies, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	timeout, cancel := context.WithTimeout(context.Background(), 180*time.Second)
+	defer cancel()
+
+	chat, err := New(options)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	chat.Client(session)
+	partialResponse, err := chat.Reply(timeout, "hi ~ who are you?", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	echo(t, partialResponse)
+	chat.Delete()
 }
 
-prompt := "who are you?"
-fmt.Println("You: ", prompt)
-// 正常对话
-partialResponse, err = chat.Reply(context.Background(), prompt, nil)
-if err != nil {
-    panic(err)
-}
-Println(partialResponse)
-// 附件上传
-prompt = "总结附件内容："
-fmt.Println("You: ", prompt)
-ctx, cancel := context.WithTimeout(context.TODO(), time.Second*20)
-defer cancel()
-partialResponse, err = chat.Reply(ctx, prompt, []types.Attachment{
-    {
-        Content:  attrCtx,
-        FileName: "paste.txt",
-        FileSize: 999999,
-        FileType: "txt",
-    }
-})
-if err != nil {
-    panic(err)
-}
-Println(partialResponse)
-
-// =========
-
-func Println(partialResponse chan types.PartialResponse) {
+func echo(t *testing.T, response chan PartialResponse) {
+	content := ""
 	for {
-		message, ok := <-partialResponse
+		message, ok := <-response
 		if !ok {
-			return
+			break
 		}
 
 		if message.Error != nil {
-			panic(message.Error)
+			t.Fatal(message.Error)
 		}
 
-		fmt.Println(message.Text)
-		fmt.Println("===============")
+		t.Log(message.Text)
+		t.Log("===============")
+		content += message.Text
 	}
+
+	t.Log(content)
 }
 ```
