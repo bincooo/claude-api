@@ -1,14 +1,20 @@
-package types
+package claude
 
 import (
-	"context"
 	"fmt"
+	"github.com/bincooo/emit.io"
+	"net/http"
+	"sync"
 )
 
-type Chat interface {
-	NewChannel(name string) error
-	Reply(ctx context.Context, prompt string, attrs []Attachment) (chan PartialResponse, error)
-	Delete()
+type Chat struct {
+	mu   sync.Mutex
+	opts *Options
+
+	oid string
+	cid string
+
+	session *emit.Session
 }
 
 type Attachment struct {
@@ -19,12 +25,12 @@ type Attachment struct {
 }
 
 type Options struct {
-	Headers map[string]string // 请求头
-	Retry   int               // 重试次数
-	BotId   string            // slack里的claude-id
-	Model   string            // 提供两个模型：slack 、 web-claude-2
-	Proxies string            // 本地代理
-	BaseURL string            // 可代理转发
+	Retry   int    // 重试次数
+	BotId   string // slack里的claude-id
+	Model   string // 提供两个模型：slack 、 web-claude-2
+	Proxies string // 本地代理
+	BaseURL string // 可代理转发
+	jar     http.CookieJar
 }
 
 type PartialResponse struct {
