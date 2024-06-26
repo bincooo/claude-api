@@ -181,6 +181,9 @@ func (c *Chat) Delete() {
 		Ja3(ja3).
 		CookieJar(c.opts.jar).
 		DELETE(baseURL+"/organizations"+c.oid+"/chat_conversations/"+c.cid).
+		Header("Origin", "https://claude.ai").
+		Header("Referer", "https://claude.ai/").
+		Header("Accept-Language", "en-US,en;q=0.9").
 		Header("user-agent", userAgent).
 		DoC(emit.Status(http.StatusOK), emit.IsJSON)
 	if err != nil {
@@ -282,6 +285,9 @@ func (c *Chat) loadModel() (string, error) {
 		GET(baseURL+"/bootstrap/"+o+"/statsig").
 		Ja3(ja3).
 		CookieJar(c.opts.jar).
+		Header("Origin", "https://claude.ai").
+		Header("Referer", "https://claude.ai/").
+		Header("Accept-Language", "en-US,en;q=0.9").
 		Header("user-agent", userAgent).
 		DoC(emit.Status(http.StatusOK), emit.IsJSON)
 	if err != nil {
@@ -307,6 +313,9 @@ func (c *Chat) getO() (string, error) {
 		GET(baseURL+"/organizations").
 		Ja3(ja3).
 		CookieJar(c.opts.jar).
+		Header("Origin", "https://claude.ai").
+		Header("Referer", "https://claude.ai/").
+		Header("Accept-Language", "en-US,en;q=0.9").
 		Header("user-agent", userAgent).
 		DoC(emit.Status(http.StatusOK), emit.IsJSON)
 	if err != nil {
@@ -336,6 +345,9 @@ func (c *Chat) getC(o string) (string, error) {
 		Ja3(ja3).
 		CookieJar(c.opts.jar).
 		JHeader().
+		Header("Origin", "https://claude.ai").
+		Header("Referer", "https://claude.ai/").
+		Header("Accept-Language", "en-US,en;q=0.9").
 		Header("user-agent", userAgent).
 		Body(map[string]interface{}{
 			"name": "",
