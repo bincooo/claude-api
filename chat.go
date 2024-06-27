@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/andybalholm/brotli"
 	"github.com/bincooo/emit.io"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -201,7 +200,7 @@ func (c *Chat) resolve(ctx context.Context, r *http.Response, message chan Parti
 		prefix2 = []byte("data: ")
 	)
 
-	scanner := bufio.NewScanner(brotli.NewReader(r.Body))
+	scanner := bufio.NewScanner(r.Body)
 	scanner.Split(func(data []byte, eof bool) (advance int, token []byte, err error) {
 		if eof && len(data) == 0 {
 			return 0, nil, nil

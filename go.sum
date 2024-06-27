@@ -2,10 +2,8 @@ github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5 h1:bBmmB7he0i
 github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5/go.mod h1:0UcFaCkhp6vZw6l5Dpq0Dp673CoF9GdvA8lTfst0GiU=
 github.com/andybalholm/brotli v1.1.0 h1:eLKJA0d02Lf0mVpIDgYnqXcUn0GqVmEFny3VuID1U3M=
 github.com/andybalholm/brotli v1.1.0/go.mod h1:sms7XGricyQI9K10gOSf56VKKWS4oLer58Q+mhRPtnY=
-github.com/bincooo/emit.io v0.0.0-20240625032952-3368351dc592 h1:3yXYqGcxSGxs7VG68RPvoaxExDejjZzEgUx3cx4hF+0=
-github.com/bincooo/emit.io v0.0.0-20240625032952-3368351dc592/go.mod h1:SqOOr68aedVMkRKaCfWVQMRZWgQwV/D/mOEwbZoKsUY=
-github.com/bincooo/requests v0.0.0-20230720064210-7eae5d6c9d1e h1:38ztKJW0K6qQGitqAlcJs8O2nal60qYoS9oNZnpkZWE=
-github.com/bincooo/requests v0.0.0-20230720064210-7eae5d6c9d1e/go.mod h1:0WuzYU+4cQL/hVbjoncY5TACMTbD9I+pLCdnPjfItp0=
+github.com/bincooo/emit.io v0.0.0-20240627072132-131b021f1619 h1:pNzxNrBjbunMFDhr5WX94GkYH2zjXahMXQMyyBx5r1c=
+github.com/bincooo/emit.io v0.0.0-20240627072132-131b021f1619/go.mod h1:QGrQDV8uyqBrt9L+6vVhmeMYaeLc0Fp4bec4+YXNm4Y=
 github.com/bitly/go-simplejson v0.5.0 h1:6IH+V8/tVMab511d5bn4M7EwGXZf9Hj6i2xSwkNEM+Y=
 github.com/bitly/go-simplejson v0.5.0/go.mod h1:cXHtHw4XUPsvGaxgjIAn8PhEWG9NfngEKAMDJEczWVA=
 github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 h1:DDGfHa7BWjL4YnC6+E63dPcxHo2sUxDIu8g3QgEJdRY=
@@ -35,8 +33,10 @@ github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/wangluozhe/fhttp v0.0.0-20230512135433-5c2ebfb4868a h1:nFqhBDkWfNrI5h8nAOv4orMHi0w3qMrd7GoBFXXZGmc=
-github.com/wangluozhe/fhttp v0.0.0-20230512135433-5c2ebfb4868a/go.mod h1:kAK+x1U0Wmy/htOSEeV31JyFBAVndp/orqVJZTq9FxM=
+github.com/wangluozhe/chttp v0.0.4 h1:6qpxXGPG+DjPM5JDZTKteIQinZvDn6XslsrDu/cxxIA=
+github.com/wangluozhe/chttp v0.0.4/go.mod h1:a89dXbcRV/36MT66nkqzOJXejTBpYfYJvQ3Fw8Z4+HY=
+github.com/wangluozhe/requests v1.2.4 h1:9Q8nXBmP9NQwyIv5usOgDFHmBRDq7Cn3tKZMxf63q34=
+github.com/wangluozhe/requests v1.2.4/go.mod h1:uxRiqW1jQ+6teXMziwT7Rx0WFFG2SW5prxHxp+ga9nE=
 golang.org/x/crypto v0.23.0 h1:dIJU/v2J8Mdglj/8rJ6UUOM3Zc9zLZxVZwwxMooUSAI=
 golang.org/x/crypto v0.23.0/go.mod h1:CKFgDieR+mRhux2Lsu27y0fO304Db0wZe70UKqHu0v8=
 golang.org/x/net v0.25.0 h1:d/OCCoBEUq33pjydKrGQhw7IlUPI2Oylr+8qLx49kac=
