@@ -3,14 +3,14 @@ module github.com/bincooo/claude-api
 go 1.21.6
 
 require (
-	github.com/andybalholm/brotli v1.1.0
-	github.com/bincooo/emit.io v0.0.0-20240627072132-131b021f1619
+	github.com/bincooo/emit.io v0.0.0-20240701123051-0b0cd6bbc709
 	github.com/google/uuid v1.3.0
 	github.com/sirupsen/logrus v1.9.3
 )
 
 require (
 	github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5 // indirect
+	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/bitly/go-simplejson v0.5.0 // indirect
 	github.com/cloudflare/circl v1.3.8 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect
