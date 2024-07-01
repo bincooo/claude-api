@@ -32,6 +32,8 @@ func TestChat(t *testing.T) {
 	}
 
 	chat.Client(session)
+	isP, _ := chat.IsPro()
+	t.Logf("account is pro: %v", isP)
 	partialResponse, err := chat.Reply(timeout, "hi ~ who are you?", nil)
 	if err != nil {
 		t.Fatal(err)

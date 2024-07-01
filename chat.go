@@ -274,6 +274,32 @@ func (c *Chat) resolve(ctx context.Context, r *http.Response, message chan Parti
 }
 
 // 加载默认模型
+func (c *Chat) IsPro() (bool, error) {
+	o, err := c.getO()
+	if err != nil {
+		return false, err
+	}
+
+	response, err := emit.ClientBuilder(c.session).
+		GET(baseURL+"/bootstrap/"+o+"/statsig").
+		Ja3(ja3).
+		CookieJar(c.opts.jar).
+		Header("Origin", "https://claude.ai").
+		Header("Referer", "https://claude.ai/").
+		Header("Accept-Language", "en-US,en;q=0.9").
+		Header("user-agent", userAgent).
+		DoC(emit.Status(http.StatusOK), emit.IsJSON)
+	if err != nil {
+		return false, err
+	}
+
+	value := emit.TextResponse(response)
+	compileRegex := regexp.MustCompile(`"custom":{"isPro":true,`)
+	matchArr := compileRegex.FindStringSubmatch(value)
+	return len(matchArr) > 0, nil
+}
+
+// 加载默认模型
 func (c *Chat) loadModel() (string, error) {
 	o, err := c.getO()
 	if err != nil {
@@ -339,6 +365,25 @@ func (c *Chat) getC(o string) (string, error) {
 		return c.cid, nil
 	}
 
+	payload := map[string]interface{}{
+		"name": "",
+		"uuid": uuid.New().String(),
+	}
+
+	pro, err := c.IsPro()
+	if err != nil {
+		return "", err
+	}
+
+	if pro {
+		// 尊贵的pro
+		payload["model"] = c.opts.Model
+	} else {
+		if strings.Contains(c.opts.Model, "opus") {
+			return "", errors.New("failed to used pro model: " + c.opts.Model)
+		}
+	}
+
 	response, err := emit.ClientBuilder(c.session).
 		POST(baseURL+"/organizations/"+o+"/chat_conversations").
 		Ja3(ja3).
@@ -348,10 +393,7 @@ func (c *Chat) getC(o string) (string, error) {
 		Header("Referer", "https://claude.ai/").
 		Header("Accept-Language", "en-US,en;q=0.9").
 		Header("user-agent", userAgent).
-		Body(map[string]interface{}{
-			"name": "",
-			"uuid": uuid.New().String(),
-		}).
+		Body(payload).
 		DoC(emit.Status(http.StatusCreated), emit.IsJSON)
 	if err != nil {
 		return "", err
