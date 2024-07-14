@@ -179,11 +179,12 @@ func (c *Chat) Delete() {
 	_, err := emit.ClientBuilder(c.session).
 		Ja3(ja3).
 		CookieJar(c.opts.jar).
-		DELETE(baseURL+"/organizations"+c.oid+"/chat_conversations/"+c.cid).
+		DELETE(baseURL+"/organizations/"+c.oid+"/chat_conversations/"+c.cid).
 		Header("Origin", "https://claude.ai").
-		Header("Referer", "https://claude.ai/").
+		Header("Referer", "https://claude.ai/chat/"+c.cid).
 		Header("Accept-Language", "en-US,en;q=0.9").
 		Header("user-agent", userAgent).
+		Bytes([]byte(`"`+c.cid+`"`)).
 		DoC(emit.Status(http.StatusOK), emit.IsJSON)
 	if err != nil {
 		c.cid = ""
