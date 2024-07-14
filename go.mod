@@ -3,10 +3,12 @@ module github.com/bincooo/claude-api
 go 1.21.6
 
 require (
-	github.com/bincooo/emit.io v0.0.0-20240701123051-0b0cd6bbc709
-	github.com/google/uuid v1.3.0
+	github.com/bincooo/emit.io v0.0.0-20240702162758-27d516d8f566
+	github.com/google/uuid v1.6.0
 	github.com/sirupsen/logrus v1.9.3
 )
+
+replace github.com/wangluozhe/requests v1.2.4 => github.com/bincooo/requests v0.0.0-20240627215101-765935c797c5
 
 require (
 	github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5 // indirect
