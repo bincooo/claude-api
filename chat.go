@@ -196,6 +196,12 @@ func (c *Chat) resolve(ctx context.Context, r *http.Response, message chan Parti
 	defer close(message)
 	defer r.Body.Close()
 
+	if c.session != nil {
+		defer func() {
+			c.session.IdleClose()
+		}()
+	}
+
 	var (
 		prefix1 = "event: "
 		prefix2 = []byte("data: ")
@@ -294,6 +300,7 @@ func (c *Chat) IsPro() (bool, error) {
 		return false, err
 	}
 
+	defer response.Body.Close()
 	value := emit.TextResponse(response)
 	compileRegex := regexp.MustCompile(`"custom":{"isPro":true,`)
 	matchArr := compileRegex.FindStringSubmatch(value)
@@ -320,6 +327,7 @@ func (c *Chat) loadModel() (string, error) {
 		return "", err
 	}
 
+	defer response.Body.Close()
 	value := emit.TextResponse(response)
 	compileRegex := regexp.MustCompile(`"value":{"model":"(claude-[^"]+)"}`)
 	matchArr := compileRegex.FindStringSubmatch(value)
@@ -348,6 +356,7 @@ func (c *Chat) getO() (string, error) {
 		return "", err
 	}
 
+	defer response.Body.Close()
 	results, err := emit.ToSlice(response)
 	if err != nil {
 		return "", err
@@ -400,6 +409,7 @@ func (c *Chat) getC(o string) (string, error) {
 		return "", err
 	}
 
+	defer response.Body.Close()
 	result, err := emit.ToMap(response)
 	if err != nil {
 		return "", err
