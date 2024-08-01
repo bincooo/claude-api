@@ -17,7 +17,11 @@ func init() {
 }
 
 func TestDelete(t *testing.T) {
-	session := emit.NewJa3Session("http://127.0.0.1:7890", 180*time.Second)
+	session, err := emit.NewJa3Session("http://127.0.0.1:7890", 180)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	options, err := NewDefaultOptions(cookies, "")
 	if err != nil {
 		t.Fatal(err)
@@ -35,7 +39,11 @@ func TestDelete(t *testing.T) {
 }
 
 func TestChat(t *testing.T) {
-	session := emit.NewJa3Session("http://127.0.0.1:7890", 180*time.Second)
+	session, err := emit.NewJa3Session("http://127.0.0.1:7890", 180)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	options, err := NewDefaultOptions(cookies, "")
 	if err != nil {
 		t.Fatal(err)
