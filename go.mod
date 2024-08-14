@@ -3,7 +3,7 @@ module github.com/bincooo/claude-api
 go 1.21.6
 
 require (
-	github.com/bincooo/emit.io v1.0.1-0.20240801214718-19c366da89a7
+	github.com/bincooo/emit.io v1.0.1-0.20240814182208-c5236f8f202c
 	github.com/google/uuid v1.6.0
 	github.com/sirupsen/logrus v1.9.3
 )

@@ -3,6 +3,7 @@ package claude
 import (
 	"context"
 	"github.com/bincooo/emit.io"
+	"github.com/bogdanfinn/tls-client/profiles"
 	"github.com/sirupsen/logrus"
 	"testing"
 	"time"
@@ -17,7 +18,7 @@ func init() {
 }
 
 func TestDelete(t *testing.T) {
-	session, err := emit.NewJa3Session("http://127.0.0.1:7890", 180)
+	session, err := emit.NewJa3Session(emit.Echo{RandomTLSExtension: true, HelloID: profiles.Chrome_124}, "http://127.0.0.1:7890", 180)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -39,7 +40,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestChat(t *testing.T) {
-	session, err := emit.NewJa3Session("http://127.0.0.1:7890", 180)
+	session, err := emit.NewJa3Session(emit.Echo{RandomTLSExtension: true, HelloID: profiles.Chrome_124}, "http://127.0.0.1:7890", 180)
 	if err != nil {
 		t.Fatal(err)
 	}
