@@ -3,7 +3,8 @@ module github.com/bincooo/claude-api
 go 1.21.6
 
 require (
-	github.com/bincooo/emit.io v1.0.1-0.20240814182208-c5236f8f202c
+	github.com/bincooo/emit.io v1.0.1-0.20240918104917-7aa3711f2559
+	github.com/bogdanfinn/tls-client v1.7.7
 	github.com/google/uuid v1.6.0
 	github.com/sirupsen/logrus v1.9.3
 )
@@ -12,7 +13,6 @@ require (
 	github.com/RomiChan/websocket v1.4.3-0.20220227141055-9b2c6168c9c5 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/bogdanfinn/fhttp v0.5.28 // indirect
-	github.com/bogdanfinn/tls-client v1.7.7 // indirect
 	github.com/bogdanfinn/utls v1.6.1 // indirect
 	github.com/cloudflare/circl v1.3.8 // indirect
 	github.com/klauspost/compress v1.17.8 // indirect

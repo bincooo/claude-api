@@ -18,7 +18,11 @@ func init() {
 }
 
 func TestDelete(t *testing.T) {
-	session, err := emit.NewJa3Session(emit.Echo{RandomTLSExtension: true, HelloID: profiles.Chrome_124}, "http://127.0.0.1:7890", 180)
+	session, err := emit.NewSession("http://127.0.0.1:7890", nil, emit.Ja3Helper(
+		emit.Echo{
+			RandomTLSExtension: true,
+			HelloID:            profiles.Chrome_124,
+		}, 180))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +44,11 @@ func TestDelete(t *testing.T) {
 }
 
 func TestChat(t *testing.T) {
-	session, err := emit.NewJa3Session(emit.Echo{RandomTLSExtension: true, HelloID: profiles.Chrome_124}, "http://127.0.0.1:7890", 180)
+	session, err := emit.NewSession("http://127.0.0.1:7890", nil, emit.Ja3Helper(
+		emit.Echo{
+			RandomTLSExtension: true,
+			HelloID:            profiles.Chrome_124,
+		}, 180))
 	if err != nil {
 		t.Fatal(err)
 	}

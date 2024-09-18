@@ -156,7 +156,7 @@ func (c *Chat) PostMessage(message string, attrs []Attachment) (*http.Response, 
 	}
 
 	return emit.ClientBuilder(c.session).
-		Ja3(ja3).
+		Ja3().
 		CookieJar(c.opts.jar).
 		POST(baseURL+"/organizations/"+organizationId+"/chat_conversations/"+conversationId+"/completion").
 		Header("referer", "https://claude.ai").
@@ -177,7 +177,7 @@ func (c *Chat) Delete() {
 	}
 
 	_, err := emit.ClientBuilder(c.session).
-		Ja3(ja3).
+		Ja3().
 		CookieJar(c.opts.jar).
 		DELETE(baseURL+"/organizations/"+c.oid+"/chat_conversations/"+c.cid).
 		Header("Origin", "https://claude.ai").
@@ -289,7 +289,7 @@ func (c *Chat) IsPro() (bool, error) {
 
 	response, err := emit.ClientBuilder(c.session).
 		GET(baseURL+"/bootstrap/"+o+"/statsig").
-		Ja3(ja3).
+		Ja3().
 		CookieJar(c.opts.jar).
 		Header("Origin", "https://claude.ai").
 		Header("Referer", "https://claude.ai/").
@@ -316,7 +316,7 @@ func (c *Chat) loadModel() (string, error) {
 
 	response, err := emit.ClientBuilder(c.session).
 		GET(baseURL+"/bootstrap/"+o+"/statsig").
-		Ja3(ja3).
+		Ja3().
 		CookieJar(c.opts.jar).
 		Header("Origin", "https://claude.ai").
 		Header("Referer", "https://claude.ai/").
@@ -345,7 +345,7 @@ func (c *Chat) getO() (string, error) {
 
 	response, err := emit.ClientBuilder(c.session).
 		GET(baseURL+"/organizations").
-		Ja3(ja3).
+		Ja3().
 		CookieJar(c.opts.jar).
 		Header("Origin", "https://claude.ai").
 		Header("Referer", "https://claude.ai/").
@@ -396,7 +396,7 @@ func (c *Chat) getC(o string) (string, error) {
 
 	response, err := emit.ClientBuilder(c.session).
 		POST(baseURL+"/organizations/"+o+"/chat_conversations").
-		Ja3(ja3).
+		Ja3().
 		CookieJar(c.opts.jar).
 		JHeader().
 		Header("Origin", "https://claude.ai").
